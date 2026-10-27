@@ -62,6 +62,13 @@
         .ticker-score { color: #ffffff; font-weight: bold; font-size: 0.9rem; background: #251216; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-color); }
         @keyframes ticker-scroll { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-50%, 0, 0); } }
 
+        /* Tor-Alarm Banner (Dein Wunsch-Layout) */
+        #goalAlertBanner { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #0f1115, #1a2332); border: 2px solid var(--accent-color); box-shadow: 0 10px 30px rgba(0,255,135,0.3); border-radius: 14px; padding: 18px 24px; z-index: 2000; width: 90%; max-width: 480px; text-align: center; animation: bounce-in 0.5s ease; cursor: pointer; }
+        @keyframes bounce-in { 0% { transform: translate(-50%, -30px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
+        .goal-alert-title { font-size: 1.2rem; font-weight: 900; color: var(--accent-color); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .goal-alert-scorer { font-size: 1rem; font-weight: bold; margin-bottom: 8px; color: #fff; }
+        .goal-alert-match { font-size: 0.85rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 6px; }
+
         /* Steuerung & Layout */
         .controls { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 20px; background: var(--card-bg); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); flex-wrap: wrap; }
         button, select { background: #21262d; color: var(--text-main); border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.95rem; transition: background 0.2s; }
@@ -133,6 +140,14 @@
     </style>
 </head>
 <body>
+    <!-- Live Tor-Alarm Popup -->
+    <div id="goalAlertBanner" onclick="hideGoalAlert()">
+        <div class="goal-alert-title" id="goalAlertTeam">⚽ Tor!</div>
+        <div class="goal-alert-scorer" id="goalAlertScorer">Torschütze & Minute</div>
+        <div class="goal-alert-match" id="goalAlertMatch">Spielstand & Paarung</div>
+        <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 8px;">(Zum Schließen antippen)</div>
+    </div>
+
     <div class="container">
         <!-- Laufband Oben -->
         <div class="ticker-wrapper">
@@ -221,12 +236,11 @@
 
     <script>
         const apiKey = "297322363f3bf16e1304cfb933a0c8d5";
-        // Wir lassen das System jetzt dynamisch per Suchfilter nach "3. Liga" in Deutschland suchen,
-        // um das automatische ID-Routing der API komplett zu umgehen.
         let leagueId = null;
         const season = "2026";
         let currentMatchday = "";
         let globalTopScorers = [];
+        let previousScores = {}; // Speicher zur Tor-Erkennung
 
         async function init() {
             await checkApiStatus();
@@ -235,7 +249,6 @@
 
         async function findThirdLeagueId() {
             try {
-                // Hole alle Ligen für Deutschland und finde exakt die ID der "3. Liga"
                 const res = await fetch(`https://v3.football.api-sports.io/leagues?country=Germany&season=${season}`, {
                     headers: { "x-apisports-key": apiKey }
                 });
@@ -251,7 +264,6 @@
                 console.error("Fehler bei der Ligen-Suche", e);
             }
 
-            // Fallback falls der Name abweicht
             if(!leagueId) {
                 leagueId = 79; 
             }
@@ -260,7 +272,7 @@
             loadTable();
             loadTopScorers();
 
-            // Live-Refresh alle 60 Sekunden
+            // Live-Refresh alle 60 Sekunden inkl. automatischer Tor-Erkennung
             setInterval(() => {
                 if(currentMatchday) {
                     loadMatchday(currentMatchday, true);
@@ -293,6 +305,24 @@
                     console.error("Push-Anmeldung fehlgeschlagen:", e);
                 }
             });
+        }
+
+        function showGoalAlert(teamName, scorerInfo, matchInfo) {
+            document.getElementById("goalAlertTeam").textContent = `⚽ Tor für ${teamName}!`;
+            document.getElementById("goalAlertScorer").textContent = scorerInfo;
+            document.getElementById("goalAlertMatch").textContent = matchInfo;
+            
+            const banner = document.getElementById("goalAlertBanner");
+            banner.style.display = "block";
+
+            // Nach 10 Sekunden automatisch ausblenden
+            setTimeout(() => {
+                hideGoalAlert();
+            }, 10000);
+        }
+
+        function hideGoalAlert() {
+            document.getElementById("goalAlertBanner").style.display = "none";
         }
 
         async function loadTopScorers() {
@@ -436,10 +466,30 @@
                     const resolvedMatches = await Promise.all(matchPromises);
 
                     resolvedMatches.forEach(({ match: m, events }) => {
+                        const fixtureId = m.fixture.id;
                         const home = m.teams.home;
                         const away = m.teams.away;
-                        const goalsHome = m.goals.home !== null ? m.goals.home : "-";
-                        const goalsAway = m.goals.away !== null ? m.goals.away : "-";
+                        const goalsHome = m.goals.home !== null ? m.goals.home : 0;
+                        const goalsAway = m.goals.away !== null ? m.goals.away : 0;
+
+                        // Automatische Tor-Erkennung
+                        if (previousScores[fixtureId] !== undefined) {
+                            const prevH = previousScores[fixtureId].home;
+                            const prevA = previousScores[fixtureId].away;
+
+                            if (goalsHome > prevH || goalsAway > prevA) {
+                                let scoringTeam = goalsHome > prevH ? home.name : away.name;
+                                let latestGoal = events.filter(ev => ev.type === 'Goal').pop();
+                                let scorerText = latestGoal ? `${latestGoal.player.name} (${latestGoal.time.elapsed}. Min)` : "Aktuelles Tor";
+                                let matchText = `${home.name} - ${away.name} (${goalsHome}:${goalsAway})`;
+
+                                showGoalAlert(scoringTeam, scorerText, matchText);
+                            }
+                        }
+                        previousScores[fixtureId] = { home: goalsHome, away: goalsAway };
+
+                        const displayHome = m.goals.home !== null ? m.goals.home : "-";
+                        const displayAway = m.goals.away !== null ? m.goals.away : "-";
                         
                         const statusShort = m.fixture.status.short;
                         const isLive = ["1H", "2H", "ET", "P", "HT"].includes(statusShort);
@@ -455,7 +505,7 @@
                             dateDisplay = dateObj.toLocaleDateString("de-DE", { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
                         }
 
-                        tickerHtml += `<span class="ticker-item"><img src="${home.logo}" class="ticker-team-logo">${home.name} <span class="ticker-score">${goalsHome}:${goalsAway}</span> ${away.name} <img src="${away.logo}" class="ticker-team-logo"></span>`;
+                        tickerHtml += `<span class="ticker-item"><img src="${home.logo}" class="ticker-team-logo">${home.name} <span class="ticker-score">${displayHome}:${displayAway}</span> ${away.name} <img src="${away.logo}" class="ticker-team-logo"></span>`;
 
                         let scorersHtml = "";
                         if (events && events.length > 0) {
@@ -491,7 +541,7 @@
                             <div class="match-main-row">
                                 <div class="team home"><span>${home.name}</span><img src="${home.logo}"></div>
                                 <div class="score-box">
-                                    <div class="score">${goalsHome} : ${goalsAway}</div>
+                                    <div class="score">${displayHome} : ${displayAway}</div>
                                     <span class="match-info-sub">${dateDisplay}</span>
                                 </div>
                                 <div class="team"><img src="${away.logo}"><span>${away.name}</span></div>
