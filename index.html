@@ -13,7 +13,6 @@
         await OneSignal.init({
           appId: "30528bc1-cf0a-475d-bc60-12bd4bf0b7b9",
           safari_web_id: "",
-          // Verhindert, dass OneSignal das Root-Verzeichnis erzwingt
           path: "/3.liga/",
           allowLocalhostAsSecureOrigin: true,
           notifyButton: {
@@ -137,17 +136,17 @@
     <div class="container">
         <!-- Laufband Oben -->
         <div class="ticker-wrapper">
-            <div class="ticker-label" id="tickerLabel">⚽ Ticker</div>
+            <div class="ticker-label" id="tickerLabel">⚽ 3. Liga Ticker</div>
             <div class="ticker-content-box">
                 <div class="ticker-track" id="tickerTrack">
-                    <span class="ticker-item">Lade Ticker-Daten...</span>
+                    <span class="ticker-item">Lade 3. Liga Ticker...</span>
                 </div>
             </div>
         </div>
 
         <header>
             <h1>3. Liga PRO Dashboard</h1>
-            <div class="subtitle">Live-Ergebnisse, Torschützen & Tabelle (Saison 2026/27)</div>
+            <div class="subtitle">Live-Ergebnisse, Torschützen & Tabelle (Saison 2026)</div>
             <div class="author-sub">Webmanagement Jürgen Schützendorf</div>
         </header>
 
@@ -182,7 +181,7 @@
             </div>
             
             <div class="card">
-                <h2>Tabelle</h2>
+                <h2>Tabelle (3. Liga)</h2>
                 <div id="tableContainer">Lade Tabelle...</div>
             </div>
         </div>
@@ -212,7 +211,7 @@
         <div class="modal-content">
             <button class="close-btn" onclick="closeTopScorersModal()">&times;</button>
             <div class="modal-header">
-                <h2 style="border:none; margin:0; padding:0;">⚽ Torschützenliste (3. Liga 2026/27)</h2>
+                <h2 style="border:none; margin:0; padding:0;">⚽ Torschützenliste (3. Liga 2026)</h2>
             </div>
             <div style="margin-top: 15px;">
                 <div id="fullScorersContainer">Lade komplette Torschützenliste...</div>
@@ -222,18 +221,46 @@
 
     <script>
         const apiKey = "297322363f3bf16e1304cfb933a0c8d5";
-        const leagueId = 79; // 3. Liga ID
+        // Wir lassen das System jetzt dynamisch per Suchfilter nach "3. Liga" in Deutschland suchen,
+        // um das automatische ID-Routing der API komplett zu umgehen.
+        let leagueId = null;
         const season = "2026";
         let currentMatchday = "";
         let globalTopScorers = [];
 
         async function init() {
             await checkApiStatus();
+            await findThirdLeagueId();
+        }
+
+        async function findThirdLeagueId() {
+            try {
+                // Hole alle Ligen für Deutschland und finde exakt die ID der "3. Liga"
+                const res = await fetch(`https://v3.football.api-sports.io/leagues?country=Germany&season=${season}`, {
+                    headers: { "x-apisports-key": apiKey }
+                });
+                const data = await res.json();
+                if(data.response && data.response.length > 0) {
+                    const match = data.response.find(item => item.league.name.trim().toLowerCase() === "3. liga");
+                    if(match) {
+                        leagueId = match.league.id;
+                        console.log("Erfolgreich ermittelte 3. Liga ID:", leagueId);
+                    }
+                }
+            } catch(e) {
+                console.error("Fehler bei der Ligen-Suche", e);
+            }
+
+            // Fallback falls der Name abweicht
+            if(!leagueId) {
+                leagueId = 79; 
+            }
+
             await loadRounds();
             loadTable();
             loadTopScorers();
 
-            // Automatischer Live-Refresh alle 60 Sekunden
+            // Live-Refresh alle 60 Sekunden
             setInterval(() => {
                 if(currentMatchday) {
                     loadMatchday(currentMatchday, true);
@@ -376,7 +403,7 @@
             currentMatchday = round;
             document.getElementById("matchdayTitle").textContent = round.replace("Regular Season - ", "Spieltag ");
             const container = document.getElementById("matchesList");
-            if (!background) container.innerHTML = "Lade Spiele & Torschützen...";
+            if (!background) container.innerHTML = "Lade 3. Liga Spiele...";
 
             try {
                 const res = await fetch(`https://v3.football.api-sports.io/fixtures?league=${leagueId}&season=${season}&round=${round}`, {
@@ -626,9 +653,9 @@
 
                     standings.forEach(s => {
                         let zoneClass = "";
-                        if (s.rank <= 2) zoneClass = "promotion-zone"; // Direktaufstieg 3. Liga
-                        else if (s.rank === 3) zoneClass = "playoff-zone";    // Relegation
-                        else if (s.rank >= 17) zoneClass = "relegation-zone"; // Abstieg
+                        if (s.rank <= 2) zoneClass = "promotion-zone"; // Direktaufstieg 3. Liga (1-2)
+                        else if (s.rank === 3) zoneClass = "playoff-zone";    // Relegation (3)
+                        else if (s.rank >= 17) zoneClass = "relegation-zone"; // Abstieg (17-20)
 
                         html += `<tr class="${zoneClass}">
                             <td><b>${s.rank}</b></td>
