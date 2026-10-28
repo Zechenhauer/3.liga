@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3. Liga PRO Dashboard — Live & Push</title>
+    <title>3. Liga PRO Dashboard — Ultimativ</title>
     
     <!-- OneSignal SDK -->
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
@@ -39,10 +39,11 @@
             --text-muted: #8b949e;
             --border-color: #30363d;
             --live-red: #ff3333;
+            --msv-blue: #004b93; /* MSV Duisburg Blau */
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); padding: 15px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 900px; }
+        .container { width: 100%; max-width: 950px; }
 
         header { text-align: center; margin-bottom: 20px; }
         h1 { font-size: 2.2rem; color: var(--accent-color); margin-bottom: 5px; }
@@ -51,18 +52,19 @@
 
         .status-box { background: #161b22; border: 1px solid var(--accent-color); padding: 10px 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center; }
 
-        /* AS-Rom Laufband Design */
+        /* Laufband Design */
         .ticker-wrapper { width: 100%; background: #0c0809; border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; margin-bottom: 20px; display: flex; align-items: center; height: 48px; position: relative; }
         .ticker-label { background: var(--accent-color); color: #000; font-size: 0.75rem; font-weight: bold; padding: 0 14px; height: 100%; display: flex; align-items: center; z-index: 3; text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; box-shadow: 4px 0 10px rgba(0,0,0,0.5); }
         .ticker-content-box { overflow: hidden; white-space: nowrap; flex: 1; position: relative; display: flex; align-items: center; }
         .ticker-track { display: flex; white-space: nowrap; will-change: transform; animation: ticker-scroll 35s linear infinite; }
         .ticker-track:hover { animation-play-state: paused; }
         .ticker-item { display: inline-flex; align-items: center; background: #150a0d; border: 1px solid var(--border-color); padding: 6px 14px; margin: 0 6px; border-radius: 8px; color: #ffffff; font-size: 0.82rem; font-weight: 500; gap: 10px; }
+        .ticker-item.msv-ticker { background: rgba(0, 75, 147, 0.25) !important; border-color: var(--msv-blue); }
         .ticker-team-logo { width: 20px; height: 20px; object-fit: contain; vertical-align: middle; }
         .ticker-score { color: #ffffff; font-weight: bold; font-size: 0.9rem; background: #251216; padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border-color); }
         @keyframes ticker-scroll { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-50%, 0, 0); } }
 
-        /* Tor-Alarm Banner (Dein Wunsch-Layout) */
+        /* Tor-Alarm Banner */
         #goalAlertBanner { display: none; position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #0f1115, #1a2332); border: 2px solid var(--accent-color); box-shadow: 0 10px 30px rgba(0,255,135,0.3); border-radius: 14px; padding: 18px 24px; z-index: 2000; width: 90%; max-width: 480px; text-align: center; animation: bounce-in 0.5s ease; cursor: pointer; }
         @keyframes bounce-in { 0% { transform: translate(-50%, -30px); opacity: 0; } 100% { transform: translate(-50%, 0); opacity: 1; } }
         .goal-alert-title { font-size: 1.2rem; font-weight: 900; color: var(--accent-color); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -75,20 +77,18 @@
         button:hover, select:hover { background: #30363d; }
         select { padding-right: 30px; }
 
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 20px; }
         .dash-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 15px; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
         .dash-card:hover { border-color: var(--accent-color); background: var(--card-hover); }
         .dash-card-title { font-size: 0.8rem; font-weight: bold; color: var(--accent-color); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
 
         .stack-layout { display: flex; flex-direction: column; gap: 20px; }
-
         .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; }
         h2 { font-size: 1.2rem; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; color: var(--accent-color); }
 
-        /* Spiel-Item mit Live-Design */
+        /* Spiel-Item */
         .match-card-item { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 15px; margin-bottom: 10px; cursor: pointer; transition: background 0.15s; }
         .match-card-item:hover { background: var(--card-hover); }
-        
         .match-main-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; }
         .team { display: flex; align-items: center; gap: 8px; width: 38%; }
         .team.home { justify-content: flex-end; text-align: right; }
@@ -97,31 +97,36 @@
         .score { font-weight: bold; background: #21262d; padding: 4px 10px; border-radius: 6px; display: inline-block; min-width: 55px; font-size: 0.95rem; }
         .match-info-sub { font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 2px; }
 
-        /* Live Badge Blinken */
         .live-badge { background: var(--live-red); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; animation: pulse-live 1.5s infinite; display: inline-block; }
         @keyframes pulse-live { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
-        /* Torschützen-Vorschau unter dem Spiel */
         .match-scorers-preview { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border-color); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .scorer-tag { display: inline-flex; align-items: center; gap: 6px; background: #161b22; padding: 3px 10px; border-radius: 4px; border: 1px solid var(--border-color); width: 100%; max-width: 400px; justify-content: center; }
         .scorer-score-badge { font-weight: bold; color: var(--accent-color); background: #21262d; padding: 1px 6px; border-radius: 3px; font-size: 0.75rem; }
 
-        /* Tabellen-Farbmarkierungen (3. Liga spezifisch) */
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         th, td { padding: 8px 8px; text-align: left; border-bottom: 1px solid var(--border-color); }
         th { color: var(--text-muted); font-weight: 600; }
         td.center, th.center { text-align: center; }
         td.right, th.right { text-align: right; }
+        .table-row { cursor: pointer; transition: background 0.15s; }
+        .table-row:hover { background: var(--card-hover); }
         .table-team { display: flex; align-items: center; gap: 6px; }
         .table-team img { width: 18px; height: 18px; object-fit: contain; }
 
-        tr.promotion-zone td:first-child { border-left: 4px solid #00ff87; }
-        tr.playoff-zone td:first-child { border-left: 4px solid #388bfd; }
-        tr.relegation-zone td:first-child { border-left: 4px solid #ff3333; }
+        tr.cl-zone td:first-child { border-left: 4px solid #00ff87; }
+        tr.el-zone td:first-child { border-left: 4px solid #388bfd; }
+        tr.relegation-zone td:first-child { border-left: 4px solid #f0883e; }
+        tr.reflux-zone td:first-child { border-left: 4px solid #ff3333; }
 
-        /* Modal für Spieldetails & Popups */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
-        .modal-content { background: var(--card-bg); border: 1px solid var(--accent-color); border-radius: 12px; width: 100%; max-width: 650px; max-height: 90vh; overflow-y: auto; padding: 25px; position: relative; }
+        /* MSV Duisburg Markierung (Blau) */
+        tr.msv-team { background: rgba(0, 75, 147, 0.18) !important; font-weight: bold; }
+        tr.msv-team td { border-color: rgba(0, 75, 147, 0.5); }
+        .msv-highlight { background: rgba(0, 75, 147, 0.22); border-left: 3px solid var(--msv-blue); padding-left: 6px; border-radius: 4px; }
+
+        /* Modals */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: var(--card-bg); border: 1px solid var(--accent-color); border-radius: 12px; width: 100%; max-width: 750px; max-height: 90vh; overflow-y: auto; padding: 25px; position: relative; }
         .close-btn { position: absolute; top: 15px; right: 20px; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; background: none; border: none; }
         .close-btn:hover { color: var(--text-main); }
         .modal-header { text-align: center; margin-bottom: 20px; }
@@ -151,17 +156,17 @@
     <div class="container">
         <!-- Laufband Oben -->
         <div class="ticker-wrapper">
-            <div class="ticker-label" id="tickerLabel">⚽ 3. Liga Ticker</div>
+            <div class="ticker-label" id="tickerLabel">⚽ Ticker</div>
             <div class="ticker-content-box">
                 <div class="ticker-track" id="tickerTrack">
-                    <span class="ticker-item">Lade 3. Liga Ticker...</span>
+                    <span class="ticker-item">Lade Ticker-Daten...</span>
                 </div>
             </div>
         </div>
 
         <header>
             <h1>3. Liga PRO Dashboard</h1>
-            <div class="subtitle">Live-Ergebnisse, Torschützen & Tabelle (Saison 2026)</div>
+            <div class="subtitle">Live, Team-Statistiken, Aufstellungen & Bestenlisten (Saison 2026/27)</div>
             <div class="author-sub">Webmanagement Jürgen Schützendorf</div>
         </header>
 
@@ -179,6 +184,14 @@
                 <div class="dash-card-title">⚽ Top-Torschützen <span>🔍 Alle</span></div>
                 <div id="topScorersWidget">Lade Torschützen...</div>
             </div>
+            <div class="dash-card" onclick="openTopAssistsModal()" title="Klicken für Vorlagen-Bestenliste">
+                <div class="dash-card-title">🎯 Top-Vorlagen <span>🔍 Alle</span></div>
+                <div id="topAssistsWidget">Lade Vorlagen...</div>
+            </div>
+            <div class="dash-card" onclick="openYellowCardsModal()" title="Klicken für Karten-Bestenliste">
+                <div class="dash-card-title">🟨 Gelbe / Rote Karten <span>🔍 Alle</span></div>
+                <div id="yellowCardsWidget">Lade Karten...</div>
+            </div>
         </div>
 
         <div class="controls">
@@ -188,31 +201,36 @@
             <button onclick="subscribePush()" style="background: var(--accent-color); color: #000; font-weight: bold;">🔔 Tor-Alarm aktivieren</button>
         </div>
 
-        <!-- Hauptbereich untereinander: Erst Spieltag, dann Tabelle -->
+        <!-- Hauptbereich -->
         <div class="stack-layout">
             <div class="card">
                 <h2 id="matchdayTitle">Spieltag</h2>
-                <div id="matchesList">Lade Begegnungen...</div>
+                <div id="matchesList">Lade Spiele...</div>
             </div>
             
             <div class="card">
-                <h2>Tabelle (3. Liga)</h2>
+                <h2>Tabelle <span style="font-size:0.75rem; color:var(--text-muted); font-weight:normal;">(Klicke auf ein Team für Saisonstatistiken)</span></h2>
                 <div id="tableContainer">Lade Tabelle...</div>
             </div>
         </div>
     </div>
 
-    <!-- Modal für Spieldetails, Tore & Statistiken -->
+    <!-- Modal für Spieldetails -->
     <div id="matchModal" class="modal">
         <div class="modal-content">
-            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <button class="close-btn" onclick="closeModal('matchModal')">&times;</button>
             <div class="modal-header">
                 <div class="modal-teams" id="modalTeamsHeader"></div>
-                <div id="modalStatus" style="color: var(--text-muted); font-size: 0.85rem;"></div>
+                <div id="modalStatus" style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 4px;"></div>
+                <div id="modalReferee" style="color: var(--accent-color); font-size: 0.8rem;"></div>
             </div>
             <div style="margin-top: 15px;">
                 <h3 style="font-size: 1rem; color: var(--accent-color); margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">Tore & Spielverlauf</h3>
                 <div id="modalEvents">Lade Spieldetails...</div>
+            </div>
+            <div style="margin-top: 20px;">
+                <h3 style="font-size: 1rem; color: var(--accent-color); margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">Formationen, Aufstellungen, Wechsel & Karten</h3>
+                <div id="modalLineups">Lade Aufstellungen & Events...</div>
             </div>
             <div style="margin-top: 20px;">
                 <h3 style="font-size: 1rem; color: var(--accent-color); margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">Spieldatistiken</h3>
@@ -221,72 +239,46 @@
         </div>
     </div>
 
-    <!-- Modal für Komplette Torschützenliste -->
-    <div id="scorersModal" class="modal">
+    <!-- Modal für Team-Saisonstatistiken -->
+    <div id="teamStatsModal" class="modal">
         <div class="modal-content">
-            <button class="close-btn" onclick="closeTopScorersModal()">&times;</button>
+            <button class="close-btn" onclick="closeModal('teamStatsModal')">&times;</button>
             <div class="modal-header">
-                <h2 style="border:none; margin:0; padding:0;">⚽ Torschützenliste (3. Liga 2026)</h2>
+                <div id="teamStatsHeader" style="font-size: 1.3rem; font-weight: bold; color: var(--accent-color);">Team-Saisonstatistik</div>
             </div>
-            <div style="margin-top: 15px;">
-                <div id="fullScorersContainer">Lade komplette Torschützenliste...</div>
-            </div>
+            <div id="teamStatsContent" style="margin-top: 15px;">Lade Team-Werte...</div>
         </div>
     </div>
 
+    <!-- Modals für Bestenlisten -->
+    <div id="scorersModal" class="modal"><div class="modal-content"><button class="close-btn" onclick="closeModal('scorersModal')">&times;</button><div class="modal-header"><h2>⚽ Torschützenliste</h2></div><div id="fullScorersContainer">Lade...</div></div></div>
+    <div id="assistsModal" class="modal"><div class="modal-content"><button class="close-btn" onclick="closeModal('assistsModal')">&times;</button><div class="modal-header"><h2>🎯 Top-Vorlagengeber</h2></div><div id="fullAssistsContainer">Lade...</div></div></div>
+    <div id="yellowCardsModal" class="modal"><div class="modal-content"><button class="close-btn" onclick="closeModal('yellowCardsModal')">&times;</button><div class="modal-header"><h2>🟨 Karten-Statistik</h2></div><div id="fullYellowCardsContainer">Lade...</div></div></div>
+
     <script>
         const apiKey = "297322363f3bf16e1304cfb933a0c8d5";
-        let leagueId = null;
+        const leagueId = 80; // 3. Liga ID
         const season = "2026";
         let currentMatchday = "";
         let globalTopScorers = [];
-        let previousScores = {}; // Speicher zur Tor-Erkennung
+        let globalTopAssists = [];
+        let globalYellowCards = [];
+        let previousScores = {};
+        let smartPollingInterval = null;
 
         async function init() {
             await checkApiStatus();
-            await findThirdLeagueId();
-        }
-
-        async function findThirdLeagueId() {
-            try {
-                const res = await fetch(`https://v3.football.api-sports.io/leagues?country=Germany&season=${season}`, {
-                    headers: { "x-apisports-key": apiKey }
-                });
-                const data = await res.json();
-                if(data.response && data.response.length > 0) {
-                    const match = data.response.find(item => item.league.name.trim().toLowerCase() === "3. liga");
-                    if(match) {
-                        leagueId = match.league.id;
-                        console.log("Erfolgreich ermittelte 3. Liga ID:", leagueId);
-                    }
-                }
-            } catch(e) {
-                console.error("Fehler bei der Ligen-Suche", e);
-            }
-
-            if(!leagueId) {
-                leagueId = 79; 
-            }
-
             await loadRounds();
             loadTable();
             loadTopScorers();
-
-            // Live-Refresh alle 60 Sekunden inkl. automatischer Tor-Erkennung
-            setInterval(() => {
-                if(currentMatchday) {
-                    loadMatchday(currentMatchday, true);
-                }
-                loadTable();
-            }, 60000);
+            loadTopAssists();
+            loadYellowCards();
         }
 
         async function checkApiStatus() {
             const banner = document.getElementById("apiStatusBanner");
             try {
-                const res = await fetch("https://v3.football.api-sports.io/status", {
-                    headers: { "x-apisports-key": apiKey }
-                });
+                const res = await fetch(`https://v3.football.api-sports.io/status`, { headers: { "x-apisports-key": apiKey } });
                 const data = await res.json();
                 if(data.response && data.response.account) {
                     const acc = data.response.account;
@@ -299,11 +291,7 @@
 
         function subscribePush() {
             window.OneSignalDeferred.push(async function(OneSignal) {
-                try {
-                    await OneSignal.Slidedown.promptPush();
-                } catch (e) {
-                    console.error("Push-Anmeldung fehlgeschlagen:", e);
-                }
+                try { await OneSignal.Slidedown.promptPush(); } catch (e) {}
             });
         }
 
@@ -311,88 +299,187 @@
             document.getElementById("goalAlertTeam").textContent = `⚽ Tor für ${teamName}!`;
             document.getElementById("goalAlertScorer").textContent = scorerInfo;
             document.getElementById("goalAlertMatch").textContent = matchInfo;
-            
-            const banner = document.getElementById("goalAlertBanner");
-            banner.style.display = "block";
-
-            // Nach 10 Sekunden automatisch ausblenden
-            setTimeout(() => {
-                hideGoalAlert();
-            }, 10000);
+            document.getElementById("goalAlertBanner").style.display = "block";
+            setTimeout(() => { hideGoalAlert(); }, 10000);
         }
 
-        function hideGoalAlert() {
-            document.getElementById("goalAlertBanner").style.display = "none";
+        function hideGoalAlert() { document.getElementById("goalAlertBanner").style.display = "none"; }
+
+        function manageSmartPolling(hasLiveGames) {
+            if (hasLiveGames && !smartPollingInterval) {
+                smartPollingInterval = setInterval(() => {
+                    if (currentMatchday) loadMatchday(currentMatchday, true);
+                    loadTable();
+                }, 60000);
+            } else if (!hasLiveGames && smartPollingInterval) {
+                clearInterval(smartPollingInterval);
+                smartPollingInterval = null;
+            }
         }
 
         async function loadTopScorers() {
             const widget = document.getElementById("topScorersWidget");
             try {
-                const res = await fetch(`https://v3.football.api-sports.io/players/topscorers?league=${leagueId}&season=${season}`, {
-                    headers: { "x-apisports-key": apiKey }
-                });
+                const res = await fetch(`https://v3.football.api-sports.io/players/topscorers?league=${leagueId}&season=${season}`, { headers: { "x-apisports-key": apiKey } });
                 const data = await res.json();
                 if(data.response && data.response.length > 0) {
                     globalTopScorers = data.response;
-                    let top3Html = "";
+                    let html = "";
                     for(let i = 0; i < Math.min(3, globalTopScorers.length); i++) {
                         let p = globalTopScorers[i];
                         let goals = p.statistics[0].goals.total ?? 0;
                         let teamName = p.statistics[0].team.name;
-                        top3Html += `<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; padding:3px 0; border-bottom:1px solid var(--border-color);">
+                        let isMsv = teamName.includes("Duisburg");
+                        html += `<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; padding:3px 0; border-bottom:1px solid var(--border-color);" class="${isMsv ? 'msv-highlight' : ''}">
                             <span><b>${i+1}.</b> ${p.player.name} <span style="color:var(--text-muted); font-size:0.75rem;">(${teamName})</span></span>
                             <span style="background:#21262d; padding:1px 6px; border-radius:4px; font-weight:bold; color:var(--accent-color);">${goals} Tore</span>
                         </div>`;
                     }
-                    widget.innerHTML = top3Html;
+                    widget.innerHTML = html;
+                }
+            } catch(e) {}
+        }
+
+        async function loadTopAssists() {
+            const widget = document.getElementById("topAssistsWidget");
+            try {
+                const res = await fetch(`https://v3.football.api-sports.io/players/topassists?league=${leagueId}&season=${season}`, { headers: { "x-apisports-key": apiKey } });
+                const data = await res.json();
+                if(data.response && data.response.length > 0) {
+                    globalTopAssists = data.response;
+                    let html = "";
+                    for(let i = 0; i < Math.min(3, globalTopAssists.length); i++) {
+                        let p = globalTopAssists[i];
+                        let assists = p.statistics[0].goals.assists ?? 0;
+                        let teamName = p.statistics[0].team.name;
+                        let isMsv = teamName.includes("Duisburg");
+                        html += `<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; padding:3px 0; border-bottom:1px solid var(--border-color);" class="${isMsv ? 'msv-highlight' : ''}">
+                            <span><b>${i+1}.</b> ${p.player.name} <span style="color:var(--text-muted); font-size:0.75rem;">(${teamName})</span></span>
+                            <span style="background:#21262d; padding:1px 6px; border-radius:4px; font-weight:bold; color:var(--accent-color);">${assists} Assists</span>
+                        </div>`;
+                    }
+                    widget.innerHTML = html;
+                }
+            } catch(e) {}
+        }
+
+        async function loadYellowCards() {
+            const widget = document.getElementById("yellowCardsWidget");
+            try {
+                const res = await fetch(`https://v3.football.api-sports.io/players/topyellowcards?league=${leagueId}&season=${season}`, { headers: { "x-apisports-key": apiKey } });
+                const data = await res.json();
+                if(data.response && data.response.length > 0) {
+                    globalYellowCards = data.response;
+                    let html = "";
+                    for(let i = 0; i < Math.min(3, globalYellowCards.length); i++) {
+                        let p = globalYellowCards[i];
+                        let cards = p.statistics[0].cards.yellow ?? 0;
+                        let teamName = p.statistics[0].team.name;
+                        let isMsv = teamName.includes("Duisburg");
+                        html += `<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; padding:3px 0; border-bottom:1px solid var(--border-color);" class="${isMsv ? 'msv-highlight' : ''}">
+                            <span><b>${i+1}.</b> ${p.player.name} <span style="color:var(--text-muted); font-size:0.75rem;">(${teamName})</span></span>
+                            <span style="background:#21262d; padding:1px 6px; border-radius:4px; font-weight:bold; color:#f0883e;">🟨 ${cards}</span>
+                        </div>`;
+                    }
+                    widget.innerHTML = html;
+                }
+            } catch(e) {}
+        }
+
+        async function openTeamStats(teamId, teamName, teamLogo) {
+            document.getElementById("teamStatsModal").style.display = "flex";
+            document.getElementById("teamStatsHeader").innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><img src="${teamLogo}" style="width:30px; height:30px; object-fit:contain;"><span>Saisonstatistik: ${teamName}</span></div>`;
+            document.getElementById("teamStatsContent").innerHTML = "Lade Team-Daten von API-Football...";
+
+            try {
+                const res = await fetch(`https://v3.football.api-sports.io/teams/statistics?league=${leagueId}&season=${season}&team=${teamId}`, { headers: { "x-apisports-key": apiKey } });
+                const data = await res.json();
+
+                if(data.response) {
+                    const st = data.response;
+                    let formStr = st.form || "N/V";
+                    let cleanSheets = st.clean_sheet?.total || 0;
+                    let failedToScore = st.failed_to_score?.total || 0;
+
+                    let html = `
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:15px;">
+                            <div style="background:#161b22; padding:12px; border-radius:8px; border:1px solid var(--border-color);">
+                                <div style="color:var(--text-muted); font-size:0.8rem;">Formkurve (letzte Spiele)</div>
+                                <div style="font-size:1.1rem; font-weight:bold; color:var(--accent-color); margin-top:4px;">${formStr}</div>
+                            </div>
+                            <div style="background:#161b22; padding:12px; border-radius:8px; border:1px solid var(--border-color);">
+                                <div style="color:var(--text-muted); font-size:0.8rem;">Spiele zu Null (Clean Sheets)</div>
+                                <div style="font-size:1.1rem; font-weight:bold; margin-top:4px;">${cleanSheets}</div>
+                            </div>
+                            <div style="background:#161b22; padding:12px; border-radius:8px; border:1px solid var(--border-color);">
+                                <div style="color:var(--text-muted); font-size:0.8rem;">Spiele ohne eigenen Torerfolg</div>
+                                <div style="font-size:1.1rem; font-weight:bold; margin-top:4px;">${failedToScore}</div>
+                            </div>
+                        </div>
+                    `;
+
+                    if (st.goals && st.goals.for && st.goals.for.minute) {
+                        html += `<h3 style="font-size:1rem; color:var(--accent-color); margin:15px 0 8px 0; border-bottom:1px solid var(--border-color); padding-bottom:4px;">Tor-Verteilung nach Minuten</h3>`;
+                        html += `<table><tr><th>Minute</th><th class="center">Tore</th><th class="center">%</th></tr>`;
+                        for (let min in st.goals.for.minute) {
+                            let obj = st.goals.for.minute[min];
+                            html += `<tr><td><b>${min}</b></td><td class="center">${obj.total ?? 0}</td><td class="center">${obj.percentage || '0%'}</td></tr>`;
+                        }
+                        html += `</table>`;
+                    }
+
+                    document.getElementById("teamStatsContent").innerHTML = html;
                 } else {
-                    widget.innerHTML = "Noch keine Torschützen erfasst.";
+                    document.getElementById("teamStatsContent").innerHTML = "Keine Statistiken für dieses Team verfügbar.";
                 }
             } catch(e) {
-                widget.innerHTML = "Fehler beim Laden.";
+                document.getElementById("teamStatsContent").innerHTML = "Fehler beim Laden der Team-Statistiken.";
             }
         }
 
         function openTopScorersModal() {
-            const modal = document.getElementById("scorersModal");
-            modal.style.display = "flex";
-            const container = document.getElementById("fullScorersContainer");
-            
-            if(globalTopScorers.length === 0) {
-                container.innerHTML = "Keine Daten vorhanden.";
-                return;
-            }
-
+            document.getElementById("scorersModal").style.display = "flex";
             let html = `<table><tr><th>#</th><th>Spieler</th><th>Team</th><th class="center">Tore</th><th class="center">Elfm.</th></tr>`;
             globalTopScorers.forEach((p, index) => {
                 let stats = p.statistics[0];
-                html += `<tr>
-                    <td><b>${index + 1}</b></td>
-                    <td><div style="display:flex; align-items:center; gap:6px;"><img src="${p.player.photo}" style="width:20px; height:20px; border-radius:50%; object-fit:cover;"><span>${p.player.name}</span></div></td>
-                    <td><div style="display:flex; align-items:center; gap:6px;"><img src="${stats.team.logo}" style="width:16px; height:16px; object-fit:contain;"><span>${stats.team.name}</span></div></td>
-                    <td class="center"><b>${stats.goals.total ?? 0}</b></td>
-                    <td class="center">${stats.goals.penalty ?? 0}</td>
-                </tr>`;
+                let isMsv = stats.team.name.includes("Duisburg");
+                html += `<tr class="${isMsv ? 'msv-team' : ''}"><td><b>${index+1}</b></td><td><div style="display:flex; align-items:center; gap:6px;"><img src="${p.player.photo}" style="width:20px; height:20px; border-radius:50%; object-fit:cover;"><span>${p.player.name}</span></div></td><td><div style="display:flex; align-items:center; gap:6px;"><img src="${stats.team.logo}" style="width:16px; height:16px; object-fit:contain;"><span>${stats.team.name}</span></div></td><td class="center"><b>${stats.goals.total ?? 0}</b></td><td class="center">${stats.goals.penalty ?? 0}</td></tr>`;
             });
-            html += `</table>`;
-            container.innerHTML = html;
+            document.getElementById("fullScorersContainer").innerHTML = html + `</table>`;
         }
 
-        function closeTopScorersModal() {
-            document.getElementById("scorersModal").style.display = "none";
+        function openTopAssistsModal() {
+            document.getElementById("assistsModal").style.display = "flex";
+            let html = `<table><tr><th>#</th><th>Spieler</th><th>Team</th><th class="center">Vorlagen</th></tr>`;
+            globalTopAssists.forEach((p, index) => {
+                let stats = p.statistics[0];
+                let isMsv = stats.team.name.includes("Duisburg");
+                html += `<tr class="${isMsv ? 'msv-team' : ''}"><td><b>${index+1}</b></td><td><div style="display:flex; align-items:center; gap:6px;"><img src="${p.player.photo}" style="width:20px; height:20px; border-radius:50%; object-fit:cover;"><span>${p.player.name}</span></div></td><td><div style="display:flex; align-items:center; gap:6px;"><img src="${stats.team.logo}" style="width:16px; height:16px; object-fit:contain;"><span>${stats.team.name}</span></div></td><td class="center"><b>${stats.goals.assists ?? 0}</b></td></tr>`;
+            });
+            document.getElementById("fullAssistsContainer").innerHTML = html + `</table>`;
         }
+
+        function openYellowCardsModal() {
+            document.getElementById("yellowCardsModal").style.display = "flex";
+            let html = `<table><tr><th>#</th><th>Spieler</th><th>Team</th><th class="center">Gelb</th><th class="center">Gelb-Rot</th><th class="center">Rot</th></tr>`;
+            globalYellowCards.forEach((p, index) => {
+                let stats = p.statistics[0];
+                let isMsv = stats.team.name.includes("Duisburg");
+                html += `<tr class="${isMsv ? 'msv-team' : ''}"><td><b>${index+1}</b></td><td><span>${p.player.name}</span></td><td><span>${stats.team.name}</span></td><td class="center"><b>${stats.cards.yellow ?? 0}</b></td><td class="center">${stats.cards.yellowred ?? 0}</td><td class="center">${stats.cards.red ?? 0}</td></tr>`;
+            });
+            document.getElementById("fullYellowCardsContainer").innerHTML = html + `</table>`;
+        }
+
+        function closeModal(modalId) { document.getElementById(modalId).style.display = "none"; }
 
         async function loadRounds() {
             try {
-                const res = await fetch(`https://v3.football.api-sports.io/fixtures/rounds?league=${leagueId}&season=${season}`, {
-                    headers: { "x-apisports-key": apiKey }
-                });
+                const res = await fetch(`https://v3.football.api-sports.io/fixtures/rounds?league=${leagueId}&season=${season}`, { headers: { "x-apisports-key": apiKey } });
                 const data = await res.json();
                 const select = document.getElementById("matchdaySelect");
                 select.innerHTML = "";
-                
-                if(data.response && data.response.length > 0) {
-                    data.response.forEach((round) => {
+                if(data.response) {
+                    data.response.forEach(round => {
                         const opt = document.createElement("option");
                         opt.value = round;
                         opt.textContent = round.replace("Regular Season - ", "Spieltag ");
@@ -400,32 +487,22 @@
                     });
                     getCurrentRound();
                 }
-            } catch (e) {
-                console.error("Fehler beim Laden der Spieltage", e);
-            }
+            } catch (e) {}
         }
 
         async function getCurrentRound() {
             try {
-                const res = await fetch(`https://v3.football.api-sports.io/fixtures/rounds?league=${leagueId}&season=${season}&current=true`, {
-                    headers: { "x-apisports-key": apiKey }
-                });
+                const res = await fetch(`https://v3.football.api-sports.io/fixtures/rounds?league=${leagueId}&season=${season}&current=true`, { headers: { "x-apisports-key": apiKey } });
                 const data = await res.json();
                 const select = document.getElementById("matchdaySelect");
-                
                 if(data.response && data.response.length > 0) {
                     currentMatchday = data.response[0];
                     select.value = currentMatchday;
-                } else if(select.options.length > 0) {
-                    currentMatchday = select.options[0].value;
-                }
+                } else if(select.options.length > 0) { currentMatchday = select.options[0].value; }
                 loadMatchday(currentMatchday);
             } catch(e) {
                 const select = document.getElementById("matchdaySelect");
-                if(select.options.length > 0) {
-                    currentMatchday = select.options[0].value;
-                    loadMatchday(currentMatchday);
-                }
+                if(select.options.length > 0) { currentMatchday = select.options[0].value; loadMatchday(currentMatchday); }
             }
         }
 
@@ -433,31 +510,25 @@
             currentMatchday = round;
             document.getElementById("matchdayTitle").textContent = round.replace("Regular Season - ", "Spieltag ");
             const container = document.getElementById("matchesList");
-            if (!background) container.innerHTML = "Lade 3. Liga Spiele...";
+            if (!background) container.innerHTML = "Lade Spiele...";
 
             try {
-                const res = await fetch(`https://v3.football.api-sports.io/fixtures?league=${leagueId}&season=${season}&round=${round}`, {
-                    headers: { "x-apisports-key": apiKey }
-                });
+                const res = await fetch(`https://v3.football.api-sports.io/fixtures?league=${leagueId}&season=${season}&round=${round}`, { headers: { "x-apisports-key": apiKey } });
                 const data = await res.json();
                 
                 if(data.response && data.response.length > 0) {
                     container.innerHTML = "";
                     let tickerHtml = "";
+                    let hasLiveGames = false;
                     
                     const matchPromises = data.response.map(async m => {
                         const fixtureId = m.fixture.id;
                         let events = m.events || [];
-                        
                         if (events.length === 0 && ['FT', '1H', '2H', 'ET', 'P', 'HT'].includes(m.fixture.status.short)) {
                             try {
-                                const evRes = await fetch(`https://v3.football.api-sports.io/fixtures?id=${fixtureId}`, {
-                                    headers: { "x-apisports-key": apiKey }
-                                });
+                                const evRes = await fetch(`https://v3.football.api-sports.io/fixtures?id=${fixtureId}`, { headers: { "x-apisports-key": apiKey } });
                                 const evData = await evRes.json();
-                                if(evData.response && evData.response.length > 0) {
-                                    events = evData.response[0].events || [];
-                                }
+                                if(evData.response) events = evData.response[0].events || [];
                             } catch(err) {}
                         }
                         return { match: m, events: events };
@@ -469,96 +540,53 @@
                         const fixtureId = m.fixture.id;
                         const home = m.teams.home;
                         const away = m.teams.away;
-                        const goalsHome = m.goals.home !== null ? m.goals.home : 0;
-                        const goalsAway = m.goals.away !== null ? m.goals.away : 0;
+                        const goalsHome = m.goals.home ?? 0;
+                        const goalsAway = m.goals.away ?? 0;
 
-                        // Automatische Tor-Erkennung
+                        let isLive = ["1H", "2H", "ET", "P", "HT"].includes(m.fixture.status.short);
+                        if (isLive) hasLiveGames = true;
+
                         if (previousScores[fixtureId] !== undefined) {
-                            const prevH = previousScores[fixtureId].home;
-                            const prevA = previousScores[fixtureId].away;
-
-                            if (goalsHome > prevH || goalsAway > prevA) {
-                                let scoringTeam = goalsHome > prevH ? home.name : away.name;
+                            if (goalsHome > previousScores[fixtureId].home || goalsAway > previousScores[fixtureId].away) {
+                                let scoringTeam = goalsHome > previousScores[fixtureId].home ? home.name : away.name;
                                 let latestGoal = events.filter(ev => ev.type === 'Goal').pop();
-                                let scorerText = latestGoal ? `${latestGoal.player.name} (${latestGoal.time.elapsed}. Min)` : "Aktuelles Tor";
-                                let matchText = `${home.name} - ${away.name} (${goalsHome}:${goalsAway})`;
-
-                                showGoalAlert(scoringTeam, scorerText, matchText);
+                                showGoalAlert(scoringTeam, latestGoal ? `${latestGoal.player.name} (${latestGoal.time.elapsed}. Min)` : "Tor", `${home.name} - ${away.name}`);
                             }
                         }
                         previousScores[fixtureId] = { home: goalsHome, away: goalsAway };
 
-                        const displayHome = m.goals.home !== null ? m.goals.home : "-";
-                        const displayAway = m.goals.away !== null ? m.goals.away : "-";
-                        
-                        const statusShort = m.fixture.status.short;
-                        const isLive = ["1H", "2H", "ET", "P", "HT"].includes(statusShort);
-                        const isFinished = ["FT", "AET", "PEN"].includes(statusShort);
+                        let displayHome = m.goals.home !== null ? m.goals.home : "-";
+                        let displayAway = m.goals.away !== null ? m.goals.away : "-";
+                        let isFinished = ["FT", "AET", "PEN"].includes(m.fixture.status.short);
 
-                        let dateDisplay = "";
-                        if (isLive) {
-                            dateDisplay = `<span class="live-badge">LIVE ${m.fixture.status.elapsed || ''}'</span>`;
-                        } else if (isFinished) {
-                            dateDisplay = `<span style="color:var(--text-muted);">Beendet</span>`;
-                        } else {
-                            const dateObj = new Date(m.fixture.date);
-                            dateDisplay = dateObj.toLocaleDateString("de-DE", { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-                        }
+                        let dateDisplay = isLive ? `<span class="live-badge">LIVE ${m.fixture.status.elapsed || ''}'</span>` : (isFinished ? `<span style="color:var(--text-muted);">Beendet</span>` : new Date(m.fixture.date).toLocaleDateString("de-DE", { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }));
 
-                        tickerHtml += `<span class="ticker-item"><img src="${home.logo}" class="ticker-team-logo">${home.name} <span class="ticker-score">${displayHome}:${displayAway}</span> ${away.name} <img src="${away.logo}" class="ticker-team-logo"></span>`;
+                        let isMsvMatch = home.name.includes("Duisburg") || away.name.includes("Duisburg");
+                        tickerHtml += `<span class="ticker-item ${isMsvMatch ? 'msv-ticker' : ''}"><img src="${home.logo}" class="ticker-team-logo">${home.name} <span class="ticker-score">${displayHome}:${displayAway}</span> ${away.name} <img src="${away.logo}" class="ticker-team-logo"></span>`;
 
                         let scorersHtml = "";
-                        if (events && events.length > 0) {
-                            let goalEvents = events.filter(ev => ev.type === 'Goal');
-                            if (goalEvents.length > 0) {
-                                scorersHtml = `<div class="match-scorers-preview">`;
-                                let currentH = 0;
-                                let currentA = 0;
-
-                                goalEvents.forEach(ge => {
-                                    if (ge.team.id === home.id) currentH++;
-                                    else currentA++;
-
-                                    let scorerName = ge.player && ge.player.name ? ge.player.name : "Tor";
-                                    let extraInfo = ge.detail === 'Own Goal' ? ' (ET)' : (ge.detail === 'Penalty' ? ' (Elfmeter)' : '');
-                                    
-                                    scorersHtml += `
-                                        <div class="scorer-tag">
-                                            <span class="scorer-score-badge">${currentH}:${currentA}</span>
-                                            <span>⚽ ${ge.time.elapsed}' ${scorerName}${extraInfo}</span>
-                                            <span style="opacity:0.6; font-size:0.75rem;">(${ge.team.name})</span>
-                                        </div>
-                                    `;
-                                });
-                                scorersHtml += `</div>`;
-                            }
+                        let goalEvents = events.filter(ev => ev.type === 'Goal');
+                        if (goalEvents.length > 0) {
+                            scorersHtml = `<div class="match-scorers-preview">`;
+                            let cH = 0, cA = 0;
+                            goalEvents.forEach(ge => {
+                                if (ge.team.id === home.id) cH++; else cA++;
+                                scorersHtml += `<div class="scorer-tag"><span class="scorer-score-badge">${cH}:${cA}</span><span>⚽ ${ge.time.elapsed}' ${ge.player.name}</span></div>`;
+                            });
+                            scorersHtml += `</div>`;
                         }
 
                         const itemDiv = document.createElement("div");
-                        itemDiv.className = "match-card-item";
+                        itemDiv.className = "match-card-item" + (isMsvMatch ? " msv-highlight" : "");
                         itemDiv.onclick = () => openMatchDetails(m.fixture.id);
-                        itemDiv.innerHTML = `
-                            <div class="match-main-row">
-                                <div class="team home"><span>${home.name}</span><img src="${home.logo}"></div>
-                                <div class="score-box">
-                                    <div class="score">${displayHome} : ${displayAway}</div>
-                                    <span class="match-info-sub">${dateDisplay}</span>
-                                </div>
-                                <div class="team"><img src="${away.logo}"><span>${away.name}</span></div>
-                            </div>
-                            ${scorersHtml}
-                        `;
+                        itemDiv.innerHTML = `<div class="match-main-row"><div class="team home"><span>${home.name}</span><img src="${home.logo}"></div><div class="score-box"><div class="score">${displayHome} : ${displayAway}</div><span class="match-info-sub">${dateDisplay}</span></div><div class="team"><img src="${away.logo}"><span>${away.name}</span></div></div>${scorersHtml}`;
                         container.appendChild(itemDiv);
                     });
-
-                    document.getElementById('tickerLabel').textContent = round.replace("Regular Season - ", "ST ");
                     document.getElementById('tickerTrack').innerHTML = tickerHtml + tickerHtml;
-                } else if (!background) {
-                    container.innerHTML = "Keine Spiele gefunden.";
+
+                    manageSmartPolling(hasLiveGames);
                 }
-            } catch(e) {
-                if (!background) container.innerHTML = "Fehler beim Laden der Spiele.";
-            }
+            } catch(e) {}
         }
 
         async function openMatchDetails(fixtureId) {
@@ -566,104 +594,97 @@
             modal.style.display = "flex";
             document.getElementById("modalTeamsHeader").innerHTML = "Lade Spieldetails...";
             document.getElementById("modalEvents").innerHTML = "Lade Tore...";
+            document.getElementById("modalLineups").innerHTML = "Lade Aufstellungen, Wechsel & Karten...";
             document.getElementById("modalStats").innerHTML = "Lade Statistiken...";
             document.getElementById("modalStatus").textContent = "";
+            document.getElementById("modalReferee").textContent = "";
 
             try {
-                const res = await fetch(`https://v3.football.api-sports.io/fixtures?id=${fixtureId}`, {
-                    headers: { "x-apisports-key": apiKey }
-                });
-                const data = await res.json();
+                const [fixRes, statsRes, lineupsRes] = await Promise.all([
+                    fetch(`https://v3.football.api-sports.io/fixtures?id=${fixtureId}`, { headers: { "x-apisports-key": apiKey } }),
+                    fetch(`https://v3.football.api-sports.io/fixtures/statistics?fixture=${fixtureId}`, { headers: { "x-apisports-key": apiKey } }),
+                    fetch(`https://v3.football.api-sports.io/fixtures/lineups?fixture=${fixtureId}`, { headers: { "x-apisports-key": apiKey } })
+                ]);
 
-                const statsRes = await fetch(`https://v3.football.api-sports.io/fixtures/statistics?fixture=${fixtureId}`, {
-                    headers: { "x-apisports-key": apiKey }
-                });
+                const fixData = await fixRes.json();
                 const statsData = await statsRes.json();
+                const lineupsData = await lineupsRes.json();
 
-                if(data.response && data.response.length > 0) {
-                    const match = data.response[0];
+                if(fixData.response && fixData.response.length > 0) {
+                    const match = fixData.response[0];
                     const home = match.teams.home;
                     const away = match.teams.away;
 
-                    document.getElementById("modalTeamsHeader").innerHTML = `
-                        <div style="display:flex; align-items:center; gap:8px;"><img src="${home.logo}">${home.name}</div>
-                        <div style="background:#21262d; padding:4px 12px; border-radius:6px;">${match.goals.home ?? 0} : ${match.goals.away ?? 0}</div>
-                        <div style="display:flex; align-items:center; gap:8px;"><img src="${away.logo}">${away.name}</div>
-                    `;
+                    document.getElementById("modalTeamsHeader").innerHTML = `<div style="display:flex; align-items:center; gap:8px;"><img src="${home.logo}">${home.name}</div><div style="background:#21262d; padding:4px 12px; border-radius:6px;">${match.goals.home ?? 0} : ${match.goals.away ?? 0}</div><div style="display:flex; align-items:center; gap:8px;"><img src="${away.logo}">${away.name}</div>`;
                     document.getElementById("modalStatus").textContent = `Status: ${match.fixture.status.long}`;
+                    if(match.fixture.referee) document.getElementById("modalReferee").textContent = `👨‍⚖️ Schiedsrichter: ${match.fixture.referee}`;
 
                     let evHtml = "";
-                    if (match.events && match.events.length > 0) {
+                    if (match.events) {
                         let hG = 0, aG = 0;
                         match.events.forEach(ev => {
                             if (ev.type === 'Goal') {
                                 if (ev.team.id === home.id) hG++; else aG++;
-                                let pName = ev.player && ev.player.name ? ev.player.name : "Tor";
-                                let gType = ev.detail === 'Own Goal' ? ' (ET)' : (ev.detail === 'Penalty' ? ' (Elfmeter)' : '');
-                                evHtml += `
-                                    <div class="event-item">
-                                        <div style="display:flex; align-items:center; gap:10px;">
-                                            <span class="event-time">${ev.time.elapsed}'</span>
-                                            <span>⚽ <b>${pName}</b> <span style="color:var(--text-muted); font-size:0.8rem;">(${ev.team.name})${gType}</span></span>
-                                        </div>
-                                        <span class="event-score">${hG}:${aG}</span>
-                                    </div>
-                                `;
-                            } else if (ev.type === 'Card') {
-                                let cIcon = ev.detail === 'Red Card' ? '🟥' : '🟨';
-                                evHtml += `
-                                    <div class="event-item" style="opacity:0.7;">
-                                        <div style="display:flex; align-items:center; gap:10px;">
-                                            <span class="event-time">${ev.time.elapsed}'</span>
-                                            <span>${cIcon} ${ev.player.name} <span style="color:var(--text-muted); font-size:0.8rem;">(${ev.team.name})</span></span>
-                                        </div>
-                                    </div>
-                                `;
+                                evHtml += `<div class="event-item"><div style="display:flex; align-items:center; gap:10px;"><span class="event-time">${ev.time.elapsed}'</span><span>⚽ <b>${ev.player.name}</b> (${ev.team.name})</span></div><span class="event-score">${hG}:${aG}</span></div>`;
                             }
                         });
                     }
-                    document.getElementById("modalEvents").innerHTML = evHtml !== "" ? evHtml : "<div style='color:var(--text-muted); text-align:center; padding:10px;'>Noch keine Tore oder Karten.</div>";
+                    document.getElementById("modalEvents").innerHTML = evHtml !== "" ? evHtml : "Keine Tore.";
 
-                    let statsHtml = "";
-                    if (statsData.response && statsData.response.length === 2) {
-                        let homeStats = statsData.response[0].statistics;
-                        let awayStats = statsData.response[1].statistics;
+                    let lineupsHtml = "Aufstellungen noch nicht verfügbar.";
+                    if (lineupsData.response && lineupsData.response.length === 2) {
+                        let lHome = lineupsData.response[0];
+                        let lAway = lineupsData.response[1];
 
-                        for (let i = 0; i < homeStats.length; i++) {
-                            let statName = homeStats[i].type;
-                            let homeVal = homeStats[i].value ?? 0;
-                            let awayVal = awayStats[i].value ?? 0;
+                        function formatTeamDetails(lineupObj, teamObj) {
+                            let start11 = lineupObj.startXI.map(p => `${p.player.name} (${p.player.pos})`).join(", ");
+                            let subs = lineupObj.substitutes.map(p => `${p.player.name}`).join(", ");
+                            let teamEvents = (match.events || []).filter(ev => ev.team.id === teamObj.id);
+                            
+                            let subsEvents = teamEvents.filter(ev => ev.type === 'subst').map(ev => `<div style="font-size:0.8rem; color:var(--text-muted);">🔄 ${ev.time.elapsed}' Ein: ${ev.player.name} | Aus: ${ev.assist.name}</div>`).join("");
+                            let cardsEvents = teamEvents.filter(ev => ev.type === 'Card').map(ev => {
+                                let cIcon = ev.detail === 'Red Card' ? '🟥' : (ev.detail === 'Yellow Red Card' ? '🟨🟥' : '🟨');
+                                return `<div style="font-size:0.8rem; color:var(--text-muted);">${cIcon} ${ev.time.elapsed}' ${ev.player.name}</div>`;
+                            }).join("");
 
-                            let hNum = parseFloat(homeVal) || 0;
-                            let aNum = parseFloat(awayVal) || 0;
-                            let total = hNum + aNum;
-                            let hPercent = total > 0 ? (hNum / total) * 100 : 50;
-
-                            statsHtml += `
-                                <div class="stat-row">
-                                    <div class="stat-info">
-                                        <span>${homeVal}</span>
-                                        <span>${statName}</span>
-                                        <span>${awayVal}</span>
+                            return `
+                                <div style="background:#161b22; padding:12px; border-radius:8px; border:1px solid var(--border-color); flex:1;">
+                                    <div style="font-weight:bold; color:var(--accent-color); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                                        <img src="${teamObj.logo}" style="width:18px; height:18px; object-fit:contain;"> ${teamObj.name}
                                     </div>
-                                    <div class="stat-bar-container">
-                                        <div class="stat-bar-home" style="width: ${hPercent}%;"></div>
-                                        <div class="stat-bar-away" style="width: ${100 - hPercent}%;"></div>
-                                    </div>
+                                    <div style="font-size:0.85rem; margin-bottom:6px;">Formation: <b>${lineupObj.formation || 'N/V'}</b> | Trainer: ${lineupObj.coach?.name || '-' }</div>
+                                    <div style="font-size:0.82rem; margin-bottom:6px; color:var(--text-muted);"><b>Startelf:</b> ${start11}</div>
+                                    <div style="font-size:0.82rem; margin-bottom:8px; color:var(--text-muted);"><b>Bank:</b> ${subs}</div>
+                                    ${subsEvents ? `<div style="margin-top:6px; border-top:1px dashed var(--border-color); padding-top:4px;"><b>Auswechslungen:</b>${subsEvents}</div>` : ''}
+                                    ${cardsEvents ? `<div style="margin-top:6px; border-top:1px dashed var(--border-color); padding-top:4px;"><b>Karten:</b>${cardsEvents}</div>` : ''}
                                 </div>
                             `;
                         }
-                    }
-                    document.getElementById("modalStats").innerHTML = statsHtml !== "" ? statsHtml : "<div style='color:var(--text-muted); text-align:center; padding:10px;'>Statistiken für dieses Spiel noch nicht verfügbar.</div>";
-                }
-            } catch(e) {
-                document.getElementById("modalEvents").innerHTML = "Fehler beim Laden.";
-                document.getElementById("modalStats").innerHTML = "Fehler beim Laden.";
-            }
-        }
 
-        function closeModal() {
-            document.getElementById("matchModal").style.display = "none";
+                        lineupsHtml = `<div style="display:flex; flex-direction:column; gap:15px;">
+                            <div style="display:flex; gap:15px; flex-wrap:wrap;">
+                                ${formatTeamDetails(lHome, home)}
+                                ${formatTeamDetails(lAway, away)}
+                            </div>
+                        </div>`;
+                    }
+                    document.getElementById("modalLineups").innerHTML = lineupsHtml;
+
+                    let statsHtml = "";
+                    if (statsData.response && statsData.response.length === 2) {
+                        let hStats = statsData.response[0].statistics;
+                        let aStats = statsData.response[1].statistics;
+                        for (let i = 0; i < hStats.length; i++) {
+                            let hVal = hStats[i].value ?? 0;
+                            let aVal = aStats[i].value ?? 0;
+                            let total = (parseFloat(hVal) || 0) + (parseFloat(aVal) || 0);
+                            let hPer = total > 0 ? ((parseFloat(hVal) || 0) / total) * 100 : 50;
+                            statsHtml += `<div class="stat-row"><div class="stat-info"><span>${hVal}</span><span>${hStats[i].type}</span><span>${aVal}</span></div><div class="stat-bar-container"><div class="stat-bar-home" style="width: ${hPer}%;"></div><div class="stat-bar-away" style="width: ${100 - hPer}%;"></div></div></div>`;
+                        }
+                    }
+                    document.getElementById("modalStats").innerHTML = statsHtml !== "" ? statsHtml : "Keine Statistiken.";
+                }
+            } catch(e) {}
         }
 
         function changeMatchday(direction) {
@@ -678,11 +699,8 @@
         async function loadTable() {
             const container = document.getElementById("tableContainer");
             try {
-                const res = await fetch(`https://v3.football.api-sports.io/standings?league=${leagueId}&season=${season}`, {
-                    headers: { "x-apisports-key": apiKey }
-                });
+                const res = await fetch(`https://v3.football.api-sports.io/standings?league=${leagueId}&season=${season}`, { headers: { "x-apisports-key": apiKey } });
                 const data = await res.json();
-                
                 if(data.response && data.response.length > 0) {
                     const standings = data.response[0].league.standings[0];
                     let html = `<table><tr><th>#</th><th>Team</th><th class="center">Sp</th><th class="center">Tore</th><th class="right">Pkt</th></tr>`;
@@ -690,24 +708,17 @@
                     let top3Html = "";
                     for(let i = 0; i < Math.min(3, standings.length); i++) {
                         let s = standings[i];
-                        top3Html += `<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; padding:3px 0; border-bottom:1px solid var(--border-color);">
-                            <div style="display:flex; align-items:center; gap:6px;">
-                                <b>${s.rank}.</b>
-                                <img src="${s.team.logo}" style="width:16px; height:16px; object-fit:contain;">
-                                <span>${s.team.name}</span>
-                            </div>
-                            <span style="background:#21262d; padding:1px 6px; border-radius:4px; font-weight:bold; color:var(--accent-color);">${s.points} Pkt</span>
-                        </div>`;
+                        let isMsv = s.team.name.includes("Duisburg");
+                        top3Html += `<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; padding:3px 0; border-bottom:1px solid var(--border-color);" class="${isMsv ? 'msv-highlight' : ''}"><div style="display:flex; align-items:center; gap:6px;"><b>${s.rank}.</b><img src="${s.team.logo}" style="width:16px; height:16px; object-fit:contain;"><span>${s.team.name}</span></div><span style="background:#21262d; padding:1px 6px; border-radius:4px; font-weight:bold; color:var(--accent-color);">${s.points} Pkt</span></div>`;
                     }
                     document.getElementById("top3TableWidget").innerHTML = top3Html;
 
                     standings.forEach(s => {
-                        let zoneClass = "";
-                        if (s.rank <= 2) zoneClass = "promotion-zone"; // Direktaufstieg 3. Liga (1-2)
-                        else if (s.rank === 3) zoneClass = "playoff-zone";    // Relegation (3)
-                        else if (s.rank >= 17) zoneClass = "relegation-zone"; // Abstieg (17-20)
-
-                        html += `<tr class="${zoneClass}">
+                        let zoneClass = s.rank <= 2 ? "cl-zone" : (s.rank === 3 ? "el-zone" : (s.rank >= 17 ? "reflux-zone" : ""));
+                        let isMsv = s.team.name.includes("Duisburg");
+                        if (isMsv) zoneClass += " msv-team";
+                        
+                        html += `<tr class="table-row ${zoneClass}" onclick="openTeamStats(${s.team.id}, '${s.team.name}', '${s.team.logo}')">
                             <td><b>${s.rank}</b></td>
                             <td><div class="table-team"><img src="${s.team.logo}"><span>${s.team.name}</span></div></td>
                             <td class="center">${s.all.played}</td>
@@ -715,14 +726,9 @@
                             <td class="right"><b>${s.points}</b></td>
                         </tr>`;
                     });
-                    html += `</table>`;
-                    container.innerHTML = html;
-                } else {
-                    container.innerHTML = "Tabelle nicht verfügbar.";
+                    container.innerHTML = html + `</table>`;
                 }
-            } catch(e) {
-                container.innerHTML = "Fehler beim Laden der Tabelle.";
-            }
+            } catch(e) {}
         }
 
         init();
