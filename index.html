@@ -12,8 +12,6 @@
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23004d98%22/><text x=%2250%22 y=%2270%22 font-size=%2260%22 text-anchor=%22middle%22>⚽</text></svg>">
     <link rel="apple-touch-icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%23004d98%22/><text x=%2250%22 y=%2270%22 font-size=%2260%22 text-anchor=%22middle%22>⚽</text></svg>">
 
-    <!-- Tailwind CSS CDN -->
-
     <style>
         :root {
             --bg-color: #070d1a;
@@ -478,49 +476,141 @@
         async function openTeamStats(teamId, teamName, teamLogo) {
             document.getElementById("teamStatsModal").style.display = "flex";
             document.getElementById("teamStatsHeader").innerHTML = `<div style="display:flex; align-items:center; gap:10px;"><img src="${teamLogo}" style="width:30px; height:30px; object-fit:contain;"><span>Saisonstatistik: ${teamName}</span></div>`;
-            document.getElementById("teamStatsContent").innerHTML = "Lade Team-Daten von API-Football...";
+            document.getElementById("teamStatsContent").innerHTML = "Lade Team-Daten, Stammdaten, Trainer, Kader & Trophäen...";
 
             try {
-                const res = await fetch(`https://v3.football.api-sports.io/teams/statistics?league=${leagueId}&season=${season}&team=${teamId}`, { headers: { "x-apisports-key": apiKey } });
-                const data = await res.json();
+                const [statsRes, teamInfoRes, coachRes, squadRes, trophiesRes] = await Promise.all([
+                    fetch(`https://v3.football.api-sports.io/teams/statistics?league=${leagueId}&season=${season}&team=${teamId}`, { headers: { "x-apisports-key": apiKey } }),
+                    fetch(`https://v3.football.api-sports.io/teams?id=${teamId}`, { headers: { "x-apisports-key": apiKey } }),
+                    fetch(`https://v3.football.api-sports.io/coachs?team=${teamId}`, { headers: { "x-apisports-key": apiKey } }),
+                    fetch(`https://v3.football.api-sports.io/players/squads?team=${teamId}`, { headers: { "x-apisports-key": apiKey } }),
+                    fetch(`https://v3.football.api-sports.io/trophies?team=${teamId}`, { headers: { "x-apisports-key": apiKey } })
+                ]);
 
-                if(data.response) {
-                    const st = data.response;
+                const statsData = await statsRes.json();
+                const teamInfoData = await teamInfoRes.json();
+                const coachData = await coachRes.json();
+                const squadData = await squadRes.json();
+                const trophiesData = await trophiesRes.json();
+
+                let html = "";
+
+                // 1. Stammdaten & Stadion & Aktueller Trainer (mit MSV Fallback & Filter)
+                if (teamInfoData.response && teamInfoData.response.length > 0) {
+                    const t = teamInfoData.response[0].team;
+                    const v = teamInfoData.response[0].venue;
+                    
+                    let coachName = "Nicht verfügbar";
+                    
+                    // Manueller Fallback für MSV Duisburg, falls API den Trainer abweicht
+                    if (t.name.includes("Duisburg")) {
+                        coachName = "Dietmar Hirsch";
+                    } else if (coachData.response && coachData.response.length > 0) {
+                        let activeCoach = coachData.response.find(c => {
+                            if (!c.career) return false;
+                            return c.career.some(car => car.team && car.team.id == teamId && (car.end === null || car.season == season));
+                        });
+                        if (!activeCoach) activeCoach = coachData.response[0];
+                        
+                        if (activeCoach) {
+                            coachName = `${activeCoach.firstname} ${activeCoach.lastname}`;
+                        }
+                    }
+
+                    html += `
+                        <h3 style="font-size:1rem; color:var(--accent-color); margin-bottom:8px; border-bottom:1px solid var(--border-color); padding-bottom:4px;">1. Stammdaten, Stadion & Trainer</h3>
+                        <div style="background:#161b22; padding:12px; border-radius:8px; border:1px solid var(--border-color); margin-bottom:15px; font-size:0.85rem; display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:10px;">
+                            <div><b>Name:</b> ${t.name} (${t.code || '-'})</div>
+                            <div><b>Gründungsjahr:</b> ${t.founded || '-'}</div>
+                            <div><b>Cheftrainer:</b> <span style="color:var(--accent-color); font-weight:bold;">👨‍💼 ${coachName}</span></div>
+                            <div><b>Stadion:</b> ${v.name || '-'}</div>
+                            <div><b>Kapazität:</b> ${v.capacity ? v.capacity.toLocaleString() + ' Plätze' : '-'}</div>
+                            <div style="grid-column: 1 / -1;"><b>Adresse:</b> ${v.address || ''}, ${v.city || ''}</div>
+                        </div>
+                    `;
+                }
+
+                // 3. Team-Saisondaten & Statistiken
+                if (statsData.response) {
+                    const st = statsData.response;
                     let formStr = st.form || "N/V";
                     let cleanSheets = st.clean_sheet?.total || 0;
                     let failedToScore = st.failed_to_score?.total || 0;
+                    let homeWins = st.fixtures?.wins?.home || 0;
+                    let homeDraws = st.fixtures?.draws?.home || 0;
+                    let homeLoses = st.fixtures?.loses?.home || 0;
+                    let awayWins = st.fixtures?.wins?.away || 0;
+                    let awayDraws = st.fixtures?.draws?.away || 0;
+                    let awayLoses = st.fixtures?.loses?.away || 0;
 
-                    let html = `
-                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:15px;">
+                    html += `
+                        <h3 style="font-size:1rem; color:var(--accent-color); margin-bottom:8px; border-bottom:1px solid var(--border-color); padding-bottom:4px;">3. Saisondaten & Statistiken</h3>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-bottom:15px;">
                             <div style="background:#161b22; padding:12px; border-radius:8px; border:1px solid var(--border-color);">
-                                <div style="color:var(--text-muted); font-size:0.8rem;">Formkurve (letzte Spiele)</div>
-                                <div style="font-size:1.1rem; font-weight:bold; color:var(--accent-color); margin-top:4px;">${formStr}</div>
+                                <div style="color:var(--text-muted); font-size:0.8rem;">Formkurve</div>
+                                <div style="font-size:1rem; font-weight:bold; color:var(--accent-color); margin-top:4px;">${formStr}</div>
                             </div>
                             <div style="background:#161b22; padding:12px; border-radius:8px; border:1px solid var(--border-color);">
-                                <div style="color:var(--text-muted); font-size:0.8rem;">Spiele zu Null (Clean Sheets)</div>
-                                <div style="font-size:1.1rem; font-weight:bold; margin-top:4px;">${cleanSheets}</div>
+                                <div style="color:var(--text-muted); font-size:0.8rem;">Heimbilanz (S-U-N)</div>
+                                <div style="font-size:1rem; font-weight:bold; margin-top:4px;">${homeWins} - ${homeDraws} - ${homeLoses}</div>
                             </div>
                             <div style="background:#161b22; padding:12px; border-radius:8px; border:1px solid var(--border-color);">
-                                <div style="color:var(--text-muted); font-size:0.8rem;">Spiele ohne eigenen Torerfolg</div>
-                                <div style="font-size:1.1rem; font-weight:bold; margin-top:4px;">${failedToScore}</div>
+                                <div style="color:var(--text-muted); font-size:0.8rem;">Auswärtsbilanz (S-U-N)</div>
+                                <div style="font-size:1rem; font-weight:bold; margin-top:4px;">${awayWins} - ${awayDraws} - ${awayLoses}</div>
+                            </div>
+                            <div style="background:#161b22; padding:12px; border-radius:8px; border:1px solid var(--border-color);">
+                                <div style="color:var(--text-muted); font-size:0.8rem;">Clean Sheets / Ohne Tor</div>
+                                <div style="font-size:1rem; font-weight:bold; margin-top:4px;">${cleanSheets} / ${failedToScore}</div>
                             </div>
                         </div>
                     `;
 
                     if (st.goals && st.goals.for && st.goals.for.minute) {
-                        html += `<h3 style="font-size:1rem; color:var(--accent-color); margin:15px 0 8px 0; border-bottom:1px solid var(--border-color); padding-bottom:4px;">Tor-Verteilung nach Minuten</h3>`;
+                        html += `<h4 style="font-size:0.9rem; color:var(--accent-color); margin:10px 0 5px 0;">Tor-Verteilung nach Minuten</h4>`;
                         html += `<table><tr><th>Minute</th><th class="center">Tore</th><th class="center">%</th></tr>`;
                         for (let min in st.goals.for.minute) {
                             let obj = st.goals.for.minute[min];
                             html += `<tr><td><b>${min}</b></td><td class="center">${obj.total ?? 0}</td><td class="center">${obj.percentage || '0%'}</td></tr>`;
                         }
-                        html += `</table>`;
+                        html += `</table><br>`;
                     }
-
-                    document.getElementById("teamStatsContent").innerHTML = html;
-                } else {
-                    document.getElementById("teamStatsContent").innerHTML = "Keine Statistiken für dieses Team verfügbar.";
                 }
+
+                // 2. Kader & Spieler
+                if (squadData.response && squadData.response.length > 0) {
+                    const players = squadData.response[0].players;
+                    let grouped = { Goalkeeper: [], Defender: [], Midfielder: [], Attacker: [] };
+                    players.forEach(p => {
+                        if (grouped[p.position]) grouped[p.position].push(p);
+                    });
+
+                    html += `<h3 style="font-size:1rem; color:var(--accent-color); margin:15px 0 8px 0; border-bottom:1px solid var(--border-color); padding-bottom:4px;">2. Aktueller Kader</h3>`;
+                    
+                    const posNames = { Goalkeeper: 'Torhüter', Defender: 'Abwehr', Midfielder: 'Mittelfeld', Attacker: 'Angriff' };
+                    for (let pos in grouped) {
+                        if (grouped[pos].length > 0) {
+                            html += `<div style="font-size:0.85rem; font-weight:bold; color:var(--text-muted); margin-top:8px;">${posNames[pos]}</div>`;
+                            html += `<div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; margin-bottom:10px;">`;
+                            grouped[pos].forEach(pl => {
+                                html += `<span style="background:#161b22; border:1px solid var(--border-color); padding:3px 8px; border-radius:4px; font-size:0.8rem;">#${pl.number || '-'} ${pl.name} (${pl.age || '-'} J.)</span>`;
+                            });
+                            html += `</div>`;
+                        }
+                    }
+                }
+
+                // 6. Trophäen
+                if (trophiesData.response && trophiesData.response.length > 0) {
+                    html += `<h3 style="font-size:1rem; color:var(--accent-color); margin:15px 0 8px 0; border-bottom:1px solid var(--border-color); padding-bottom:4px;">Trophäen & Titel</h3>`;
+                    html += `<table><tr><th>Wettbewerb</th><th>Land / Region</th><th class="center">Titel</th><th class="center">Jahre</th></tr>`;
+                    trophiesData.response.forEach(tr => {
+                        html += `<tr><td><b>${tr.league}</b></td><td>${tr.country}</td><td class="center">${tr.count}</td><td class="center" style="font-size:0.75rem; color:var(--text-muted);">${tr.seasons || '-'}</td></tr>`;
+                    });
+                    html += `</table>`;
+                }
+
+                document.getElementById("teamStatsContent").innerHTML = html;
+
             } catch(e) {
                 document.getElementById("teamStatsContent").innerHTML = "Fehler beim Laden der Team-Statistiken.";
             }
