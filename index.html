@@ -275,6 +275,7 @@
         let globalYellowCards = [];
         let previousScores = {};
         let smartPollingInterval = null;
+        let recentGoalsList = JSON.parse(localStorage.getItem('msv_recent_goals_cache') || '[]');
 
         async function init() {
             await checkApiStatus();
@@ -325,7 +326,7 @@
                     body: JSON.stringify({
                         table: 'push_subscriptions_msv',
                         title: "⚽ 3. Liga Tor-Alarm (MSV Test)",
-                        body: "Test-Alarm über Supabase Edge Function (msv) erfolgreich ausgelöst!"
+                        body: "Test-Alarm über Supabase Edge Function erfolgreich ausgelöst!"
                     })
                 });
                 if (response.ok) alert("Test-Push erfolgreich ausgelöst!");
@@ -379,6 +380,55 @@
             } catch (error) {
                 console.error('Fehler bei der Push-Registrierung:', error);
                 alert("Fehler beim Aktivieren der Benachrichtigung: " + error.message);
+            }
+        }
+
+        async function checkAllGoalsAndNotify(home, away, hScore, aScore, latestScorer, matchId) {
+            if (!latestScorer || latestScorer.includes("Tor") || latestScorer.trim() === "⚽") return;
+
+            let uniqueGoalId = `msv_${matchId}_${hScore}:${aScore}_${latestScorer}`;
+            
+            let cleanPlayer = latestScorer.replace(/⚽\s*/, '').replace(/\(\d+['']\)/, '').replace('(Pen)', '').replace('(ET)', '').trim();
+            let minStr = latestScorer.match(/\(\d+['']\)/) ? ` ${latestScorer.match(/\(\d+['']\)/)[0]}` : '';
+
+            let goalObject = {
+                id: uniqueGoalId,
+                text: `<strong>${hScore}:${aScore}</strong> — ${home} vs ${away} (${cleanPlayer}${minStr})`
+            };
+
+            if (!recentGoalsList.some(g => g.id === uniqueGoalId)) {
+                recentGoalsList.unshift(goalObject);
+                if (recentGoalsList.length > 5) recentGoalsList = recentGoalsList.slice(0, 5);
+                localStorage.setItem('msv_recent_goals_cache', JSON.stringify(recentGoalsList));
+            }
+
+            try {
+                let { data: existing, error: checkError } = await supabaseClient
+                    .from('sent_goals_msv')
+                    .select('goal_id')
+                    .eq('goal_id', uniqueGoalId)
+                    .maybeSingle();
+
+                if (!existing && !checkError) {
+                    let { error: insertError } = await supabaseClient
+                        .from('sent_goals_msv')
+                        .insert([{ goal_id: uniqueGoalId }]);
+
+                    if (!insertError) {
+                        await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+                            method: 'POST',
+                            mode: 'cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                table: 'push_subscriptions_msv',
+                                title: `⚽ 3. Liga Tor! (${hScore}:${aScore})`,
+                                body: `${home} vs ${away}\nTorschütze: ${cleanPlayer}${minStr}`
+                            })
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error("Fehler beim MSV Tor-Cache & Push:", e);
             }
         }
 
@@ -495,14 +545,11 @@
 
                 let html = "";
 
-                // 1. Stammdaten & Stadion & Aktueller Trainer (mit MSV Fallback & Filter)
                 if (teamInfoData.response && teamInfoData.response.length > 0) {
                     const t = teamInfoData.response[0].team;
                     const v = teamInfoData.response[0].venue;
                     
                     let coachName = "Nicht verfügbar";
-                    
-                    // Manueller Fallback für MSV Duisburg, falls API den Trainer abweicht
                     if (t.name.includes("Duisburg")) {
                         coachName = "Dietmar Hirsch";
                     } else if (coachData.response && coachData.response.length > 0) {
@@ -530,7 +577,6 @@
                     `;
                 }
 
-                // 3. Team-Saisondaten & Statistiken
                 if (statsData.response) {
                     const st = statsData.response;
                     let formStr = st.form || "N/V";
@@ -576,7 +622,6 @@
                     }
                 }
 
-                // 2. Kader & Spieler
                 if (squadData.response && squadData.response.length > 0) {
                     const players = squadData.response[0].players;
                     let grouped = { Goalkeeper: [], Defender: [], Midfielder: [], Attacker: [] };
@@ -599,7 +644,6 @@
                     }
                 }
 
-                // 6. Trophäen
                 if (trophiesData.response && trophiesData.response.length > 0) {
                     html += `<h3 style="font-size:1rem; color:var(--accent-color); margin:15px 0 8px 0; border-bottom:1px solid var(--border-color); padding-bottom:4px;">Trophäen & Titel</h3>`;
                     html += `<table><tr><th>Wettbewerb</th><th>Land / Region</th><th class="center">Titel</th><th class="center">Jahre</th></tr>`;
@@ -729,7 +773,11 @@
                             if (goalsHome > previousScores[fixtureId].home || goalsAway > previousScores[fixtureId].away) {
                                 let scoringTeam = goalsHome > previousScores[fixtureId].home ? home.name : away.name;
                                 let latestGoal = events.filter(ev => ev.type === 'Goal').pop();
+                                let scorerText = latestGoal ? `⚽ ${latestGoal.player.name} (${latestGoal.time.elapsed}')` : "⚽ Tor";
+                                
                                 showGoalAlert(scoringTeam, latestGoal ? `${latestGoal.player.name} (${latestGoal.time.elapsed}. Min)` : "Tor", `${home.name} - ${away.name}`);
+                                
+                                checkAllGoalsAndNotify(home.name, away.name, goalsHome, goalsAway, scorerText, fixtureId);
                             }
                         }
                         previousScores[fixtureId] = { home: goalsHome, away: goalsAway };
