@@ -383,7 +383,7 @@
             }
         }
 
-        async function checkAllGoalsAndNotify(home, away, hScore, aScore, latestScorer, matchId) {
+        async function checkAllGoalsAndNotify(home, away, hScore, aScore, latestScorer, matchId, scoringTeam) {
             if (!latestScorer || latestScorer.includes("Tor") || latestScorer.trim() === "⚽") return;
 
             let uniqueGoalId = `msv_${matchId}_${hScore}:${aScore}_${latestScorer}`;
@@ -421,8 +421,8 @@
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 table: 'push_subscriptions_msv',
-                                title: `⚽ 3. Liga Tor! (${hScore}:${aScore})`,
-                                body: `${home} vs ${away}\nTorschütze: ${cleanPlayer}${minStr}`
+                                title: `⚽ TOR! für ${scoringTeam} zum ${hScore}:${aScore}`,
+                                body: `Torschütze: ${cleanPlayer}${minStr}\n${home} : ${away}`
                             })
                         });
                     }
@@ -777,7 +777,7 @@
                                 
                                 showGoalAlert(scoringTeam, latestGoal ? `${latestGoal.player.name} (${latestGoal.time.elapsed}. Min)` : "Tor", `${home.name} - ${away.name}`);
                                 
-                                checkAllGoalsAndNotify(home.name, away.name, goalsHome, goalsAway, scorerText, fixtureId);
+                                checkAllGoalsAndNotify(home.name, away.name, goalsHome, goalsAway, scorerText, fixtureId, scoringTeam);
                             }
                         }
                         previousScores[fixtureId] = { home: goalsHome, away: goalsAway };
