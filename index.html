@@ -289,7 +289,8 @@
         let isLivePollingEnabled = true;
         let recentGoalsList = JSON.parse(localStorage.getItem('msv_recent_goals_cache') || '[]');
 
-        // Globaler Spieler-Foto-Cache
+        // Caches & Optimierungen
+        let fixtureDetailsCache = JSON.parse(localStorage.getItem('liga3_fixture_details_cache') || '{}');
         let playerPhotoCache = JSON.parse(localStorage.getItem('liga3_player_photo_cache') || '{}');
 
         function cachePlayerPhoto(playerId, photoUrl) {
@@ -352,7 +353,7 @@
             await checkApiStatus();
             await loadLeagueLogo();
             await loadRounds();
-            loadTable();
+            loadTable(); // Entkoppelt: Nur beim Start & manuellem Klick
             loadTopScorers();
             loadTopAssists();
             loadYellowCards();
@@ -571,12 +572,12 @@
 
             if (!isLivePollingEnabled) return;
 
-            const pollingIntervalTime = hasLiveGames ? 60000 : 180000;
+            // 60 Sekunden bei Live-Spielen, ansonsten 2 Minuten (120000 ms)
+            const pollingIntervalTime = hasLiveGames ? 60000 : 120000;
 
             smartPollingInterval = setInterval(() => {
                 if (currentMatchday && isLivePollingEnabled) {
                     loadMatchday(currentMatchday, true);
-                    loadTable();
                 }
             }, pollingIntervalTime);
         }
@@ -897,12 +898,25 @@
                     const matchPromises = data.response.map(async m => {
                         const fixtureId = m.fixture.id;
                         let events = m.events || [];
-                        if (events.length === 0 && ['FT', '1H', '2H', 'ET', 'P', 'HT'].includes(m.fixture.status.short)) {
-                            try {
-                                const evRes = await fetch(`https://v3.football.api-sports.io/fixtures?id=${fixtureId}`, { headers: { "x-apisports-key": apiKey } });
-                                const evData = await evRes.json();
-                                if(evData.response) events = evData.response[0].events || [];
-                            } catch(err) {}
+                        let isFinished = ["FT", "AET", "PEN"].includes(m.fixture.status.short);
+
+                        // Optimierung: Caching für beendete Spiele nutzen (keine wiederholten API-Abfragen)
+                        if (isFinished && fixtureDetailsCache[fixtureId]) {
+                            events = fixtureDetailsCache[fixtureId].events || [];
+                        } else {
+                            if (events.length === 0 && ['FT', '1H', '2H', 'ET', 'P', 'HT'].includes(m.fixture.status.short)) {
+                                try {
+                                    const evRes = await fetch(`https://v3.football.api-sports.io/fixtures?id=${fixtureId}`, { headers: { "x-apisports-key": apiKey } });
+                                    const evData = await evRes.json();
+                                    if(evData.response) {
+                                        events = evData.response[0].events || [];
+                                        if (isFinished) {
+                                            fixtureDetailsCache[fixtureId] = { events: events };
+                                            localStorage.setItem('liga3_fixture_details_cache', JSON.stringify(fixtureDetailsCache));
+                                        }
+                                    }
+                                } catch(err) {}
+                            }
                         }
                         return { match: m, events: events };
                     });
@@ -961,7 +975,6 @@
                                     let comments = (ge.comments || '').toLowerCase();
                                     let cIcon = '🟨';
                                     
-                                    // Robuste Gelb-Rot-Erkennung
                                     if (detail.includes('second yellow') || detail.includes('yellow/red') || detail.includes('yellowred') || (detail.includes('red') && detail.includes('yellow')) || comments.includes('yellow/red') || comments.includes('second yellow')) {
                                         cIcon = '🟨🟥';
                                     } else if (detail.includes('red') || comments.includes('red card')) {
@@ -1147,48 +1160,48 @@
         }
 
         async function loadTable() {
-        const container = document.getElementById("tableContainer");
-        try {
-            const res = await fetch(`https://v3.football.api-sports.io/standings?league=${leagueId}&season=${season}`, { headers: { "x-apisports-key": apiKey } });
-            const data = await res.json();
-            if(data.response && data.response.length > 0) {
-                const standings = data.response[0].league.standings[0];
-                
-                // Erweiterte Kopfzeile mit S, U, N
-                let html = `<table><tr><th>#</th><th>Team</th><th class="center">Sp</th><th class="center">S</th><th class="center">U</th><th class="center">N</th><th class="center">Tore</th><th class="center">Diff</th><th class="right">Pkt</th></tr>`;
-                
-                let top3Html = "";
-                for(let i = 0; i < Math.min(3, standings.length); i++) {
-                    let s = standings[i];
-                    let isBayern = s.team.name.includes("Bayern");
-                    top3Html += `<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; padding:3px 0; border-bottom:1px solid var(--border-color);" class="${isBayern ? 'bayern-highlight' : ''}"><div style="display:flex; align-items:center; gap:6px;"><b>${s.rank}.</b><img src="${s.team.logo}" style="width:16px; height:16px; object-fit:contain;"><span>${s.team.name}</span></div><span style="background:#21262d; padding:1px 6px; border-radius:4px; font-weight:bold; color:var(--accent-color);">${s.points} Pkt</span></div>`;
-                }
-                document.getElementById("top3TableWidget").innerHTML = top3Html;
+            const container = document.getElementById("tableContainer");
+            try {
+                const res = await fetch(`https://v3.football.api-sports.io/standings?league=${leagueId}&season=${season}`, { headers: { "x-apisports-key": apiKey } });
+                const data = await res.json();
+                if(data.response && data.response.length > 0) {
+                    const standings = data.response[0].league.standings[0];
+                    
+                    // Exakte Tabellenkopf-Struktur wie in der Bundesliga-App (Sp, S, U, N, Tore, Diff, Pkt)
+                    let html = `<table><tr><th>#</th><th>Team</th><th class="center">Sp</th><th class="center">S</th><th class="center">U</th><th class="center">N</th><th class="center">Tore</th><th class="center">Diff</th><th class="right">Pkt</th></tr>`;
+                    
+                    let top3Html = "";
+                    for(let i = 0; i < Math.min(3, standings.length); i++) {
+                        let s = standings[i];
+                        let isMsv = s.team.name.includes("Duisburg");
+                        top3Html += `<div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; padding:3px 0; border-bottom:1px solid var(--border-color);" class="${isMsv ? 'msv-highlight' : ''}"><div style="display:flex; align-items:center; gap:6px;"><b>${s.rank}.</b><img src="${s.team.logo}" style="width:16px; height:16px; object-fit:contain;"><span>${s.team.name}</span></div><span style="background:#21262d; padding:1px 6px; border-radius:4px; font-weight:bold; color:var(--accent-color);">${s.points} Pkt</span></div>`;
+                    }
+                    document.getElementById("top3TableWidget").innerHTML = top3Html;
 
-                standings.forEach(s => {
-                    let zoneClass = s.rank <= 4 ? "cl-zone" : (s.rank <= 6 ? "el-zone" : (s.rank === 16 ? "relegation-zone" : (s.rank >= 17 ? "reflux-zone" : "")));
-                    if (s.team.name.includes("Bayern")) zoneClass += " bayern-team";
-                    
-                    let diffValue = s.goalsDiff !== undefined ? s.goalsDiff : (s.all.goals.for - s.all.goals.against);
-                    let diffFormatted = diffValue > 0 ? '+' + diffValue : diffValue;
-                    
-                    // Zeilendaten passend zur neuen Kopfzeile
-                    html += `<tr class="table-row ${zoneClass}" onclick="openTeamStats(${s.team.id}, '${s.team.name}', '${s.team.logo}')">
-                        <td><b>${s.rank}</b></td>
-                        <td><div class="table-team"><img src="${s.team.logo}"><span>${s.team.name}</span></div></td>
-                        <td class="center">${s.all.played}</td>
-                        <td class="center">${s.all.win}</td>
-                        <td class="center">${s.all.draw}</td>
-                        <td class="center">${s.all.lose}</td>
-                        <td class="center">${s.all.goals.for}:${s.all.goals.against}</td>
-                        <td class="center">${diffFormatted}</td>
-                        <td class="right"><b>${s.points}</b></td>
-                    </tr>`;
-                });
-                container.innerHTML = html + `</table>`;
-            }
-        } catch(e) {}
-    }
+                    standings.forEach(s => {
+                        let zoneClass = s.rank <= 2 ? "cl-zone" : (s.rank === 3 ? "el-zone" : (s.rank === 16 ? "relegation-zone" : (s.rank >= 17 ? "reflux-zone" : "")));
+                        if (s.team.name.includes("Duisburg")) zoneClass += " msv-team";
+                        
+                        let diffValue = s.goalsDiff !== undefined ? s.goalsDiff : (s.all.goals.for - s.all.goals.against);
+                        let diffFormatted = diffValue > 0 ? '+' + diffValue : diffValue;
+                        
+                        // Zeilendaten passend zur Kopfzeile
+                        html += `<tr class="table-row ${zoneClass}" onclick="openTeamStats(${s.team.id}, '${s.team.name}', '${s.team.logo}')">
+                            <td><b>${s.rank}</b></td>
+                            <td><div class="table-team"><img src="${s.team.logo}"><span>${s.team.name}</span></div></td>
+                            <td class="center">${s.all.played}</td>
+                            <td class="center">${s.all.win}</td>
+                            <td class="center">${s.all.draw}</td>
+                            <td class="center">${s.all.lose}</td>
+                            <td class="center">${s.all.goals.for}:${s.all.goals.against}</td>
+                            <td class="center">${diffFormatted}</td>
+                            <td class="right"><b>${s.points}</b></td>
+                        </tr>`;
+                    });
+                    container.innerHTML = html + `</table>`;
+                }
+            } catch(e) {}
+        }
 
         init();
     </script>
