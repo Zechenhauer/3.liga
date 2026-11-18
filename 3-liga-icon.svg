@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#131c2e" />
+      <stop offset="100%" stop-color="#0b0f19" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f5d77f" />
+      <stop offset="50%" stop-color="#d4af37" />
+      <stop offset="100%" stop-color="#aa8c2c" />
+    </linearGradient>
+  </defs>
+
+  <rect x="32" y="32" width="448" height="448" rx="104" fill="url(#bgGrad)" stroke="#d4af37" stroke-width="6" />
+
+  <!-- Text oben: LIGA -->
+  <text x="256" y="105" font-family="-apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, Roboto, sans-serif" font-size="34" font-weight="800" fill="url(#goldGrad)" text-anchor="middle" letter-spacing="3">LIGA</text>
+
+  <!-- Fußballer Silhouette -->
+  <g fill="url(#goldGrad)">
+    <circle cx="285" cy="155" r="14" />
+    <path d="M 235 185 C 250 175, 275 165, 290 180 C 275 195, 260 210, 245 225 L 225 210 Z" />
+    <path d="M 235 185 C 210 175, 180 160, 160 145 C 165 135, 175 130, 185 135 C 200 145, 220 165, 235 185 Z" />
+    <path d="M 285 190 C 310 185, 340 185, 365 195 C 360 205, 345 210, 335 205 C 315 195, 300 195, 285 190 Z" />
+    <path d="M 235 185 C 245 205, 255 225, 245 255 C 235 275, 215 290, 195 305 C 190 295, 195 285, 205 275 C 220 260, 230 240, 235 185 Z" />
+    <path d="M 245 255 C 270 260, 300 270, 325 285 C 330 295, 325 305, 315 305 C 290 295, 265 280, 245 265 Z" />
+    <path d="M 195 305 C 185 330, 175 365, 160 395 C 150 405, 140 395, 150 380 C 165 350, 175 320, 185 305 Z" />
+    <path d="M 325 285 C 335 280, 345 290, 340 300 C 330 305, 320 305, 325 285 Z" />
+  </g>
+
+  <!-- Fußball oben rechts -->
+  <circle cx="370" cy="190" r="18" fill="url(#goldGrad)" />
+  <path d="M 365 180 L 375 185 L 370 195 Z" fill="#0b0f19" opacity="0.6" />
+
+  <!-- Haupt-Fußball unten -->
+  <g transform="translate(256, 360)">
+    <circle cx="0" cy="0" r="32" fill="url(#goldGrad)" stroke="#0b0f19" stroke-width="2" />
+    <path d="M 0 -12 L 10 -4 L 6 10 L -6 10 L -10 -4 Z" fill="#0b0f19" opacity="0.7" />
+    <path d="M 0 -12 L 0 -32" stroke="#0b0f19" stroke-width="2" />
+    <path d="M 10 -4 L 28 -14" stroke="#0b0f19" stroke-width="2" />
+    <path d="M 6 10 L 22 24" stroke="#0b0f19" stroke-width="2" />
+    <path d="M -6 10 L -22 24" stroke="#0b0f19" stroke-width="2" />
+    <path d="M -10 -4 L -28 -14" stroke="#0b0f19" stroke-width="2" />
+  </g>
+
+  <!-- Text unten: 3. LIGA -->
+  <text x="256" y="445" font-family="-apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, Roboto, sans-serif" font-size="28" font-weight="800" fill="url(#goldGrad)" text-anchor="middle" letter-spacing="2">3. LIGA</text>
+</svg>
