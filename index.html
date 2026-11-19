@@ -96,6 +96,21 @@
         .live-badge { background: var(--live-red); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; animation: pulse-live 1.5s infinite; display: inline-block; }
         @keyframes pulse-live { 0% { opacity: 1; } 50% { opacity: 0.4; } 100% { opacity: 1; } }
 
+        /* Grafische Timeline */
+        .match-timeline-preview { position: relative; margin: 12px 0 8px 0; padding: 10px 5px; overflow-x: auto; background: #161b22; border-radius: 6px; border: 1px solid var(--border-color); }
+        .match-timeline-axis { position: absolute; top: 44px; left: 15px; right: 15px; height: 2px; background: var(--border-color); z-index: 1; }
+        .match-timeline-nodes { display: flex; gap: 18px; position: relative; z-index: 2; padding: 0 5px; width: max-content; align-items: flex-start; }
+        .match-timeline-node { display: flex; flex-direction: column; align-items: center; text-align: center; width: 84px; flex-shrink: 0; }
+        .match-timeline-node.is-goal .match-timeline-player-img { border: 2px solid var(--accent-color); box-shadow: 0 0 10px rgba(0, 255, 135, 0.6); }
+        .match-timeline-node.is-goal .match-timeline-badge-mini { background: var(--accent-color); color: #000; font-weight: bold; font-size: 0.65rem; width: auto; padding: 0 6px; border-radius: 10px; bottom: -4px; right: -12px; box-shadow: 0 0 6px rgba(0, 255, 135, 0.8); white-space: nowrap; }
+        .match-timeline-node.is-goal .match-timeline-player { color: var(--accent-color); text-shadow: 0 0 4px rgba(0, 255, 135, 0.3); }
+        .match-timeline-avatar-container { position: relative; width: 32px; height: 32px; margin-bottom: 4px; z-index: 3; }
+        .match-timeline-player-img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color); background: #21262d; }
+        .match-timeline-badge-mini { position: absolute; bottom: -2px; right: -2px; background: #0f1115; border: 1px solid var(--border-color); border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; font-size: 0.55rem; }
+        .match-timeline-minute { font-size: 0.65rem; color: var(--text-muted); background: #21262d; padding: 1px 5px; border-radius: 4px; margin-bottom: 3px; font-weight: bold; }
+        .match-timeline-player { font-size: 0.68rem; font-weight: bold; color: var(--text-main); line-height: 1.1; word-break: break-word; max-width: 84px; }
+        .match-timeline-team { font-size: 0.6rem; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; justify-content: center; gap: 2px; }
+
         .match-scorers-preview { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border-color); font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .scorer-tag { display: inline-flex; align-items: center; gap: 6px; background: #161b22; padding: 3px 10px; border-radius: 4px; border: 1px solid var(--border-color); width: 100%; max-width: 400px; justify-content: center; }
         .scorer-score-badge { font-weight: bold; color: var(--accent-color); background: #21262d; padding: 1px 6px; border-radius: 3px; font-size: 0.75rem; }
@@ -958,32 +973,73 @@
                         let isMsvMatch = home.name.includes("Duisburg") || away.name.includes("Duisburg");
                         tickerHtml += `<span class="ticker-item ${isMsvMatch ? 'msv-ticker' : ''}"><img src="${home.logo}" class="ticker-team-logo">${home.name} <span class="ticker-score">${displayHome}:${displayAway}</span> ${away.name} <img src="${away.logo}" class="ticker-team-logo"></span>`;
 
+                        // Grafische Timeline (Tore & Karten)
+                        let matchTimelineHtml = "";
+                        let relevantTimelineEvents = events.filter(ev => ['Goal', 'Card'].includes(ev.type));
+                        if (relevantTimelineEvents.length > 0) {
+                            matchTimelineHtml = `<div class="match-timeline-preview"><div class="match-timeline-axis"></div><div class="match-timeline-nodes">`;
+                            let tH = 0, tA = 0;
+
+                            relevantTimelineEvents.forEach(ev => {
+                                let isGoal = ev.type === 'Goal';
+                                let icon = '⚽';
+
+                                if (isGoal) {
+                                    if (ev.team.id === home.id) tH++; else tA++;
+                                    icon = `⚽ ${tH}:${tA}`;
+                                } else if (ev.type === 'Card') {
+                                    let detail = (ev.detail || '').toLowerCase();
+                                    let comments = (ev.comments || '').toLowerCase();
+                                    if (detail.includes('second yellow') || detail.includes('yellow/red') || detail.includes('yellowred') || (detail.includes('red') && detail.includes('yellow')) || comments.includes('yellow/red')) {
+                                        icon = '🟨🟥';
+                                    } else if (detail.includes('red') || comments.includes('red card')) {
+                                        icon = '🟥';
+                                    } else {
+                                        icon = '🟨';
+                                    }
+                                }
+
+                                let playerId = ev.player ? ev.player.id : null;
+                                let playerName = ev.player ? ev.player.name : '';
+                                let photoUrl = playerId ? (playerPhotoCache[playerId] || '') : '';
+                                if (playerId && !photoUrl) {
+                                    fetchAndCachePlayerPhoto(playerId);
+                                }
+
+                                let isHomeEv = ev.team.id === home.id;
+                                let teamLogo = isHomeEv ? home.logo : away.logo;
+                                let teamNameShort = isHomeEv ? home.name : away.name;
+
+                                matchTimelineHtml += `
+                                    <div class="match-timeline-node ${isGoal ? 'is-goal' : ''}">
+                                        <div class="match-timeline-minute">${ev.time.elapsed}'</div>
+                                        <div class="match-timeline-avatar-container">
+                                            <img src="${photoUrl || 'https://via.placeholder.com/32'}" class="match-timeline-player-img player-img-${playerId}" alt="${playerName}">
+                                            <div class="match-timeline-badge-mini" title="${isGoal ? 'Torstand: ' + tH + ':' + tA : 'Aktion'}">${icon}</div>
+                                        </div>
+                                        <div class="match-timeline-player" title="${playerName}">${playerName}</div>
+                                        <div class="match-timeline-team">
+                                            <img src="${teamLogo}" style="width:12px; height:12px; object-fit:contain;" alt="${teamNameShort}">
+                                            <span>${isHomeEv ? 'Heim' : 'Gast'}</span>
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            matchTimelineHtml += `</div></div>`;
+                        }
+
+                        // Nur Tore (Goal) in der Torschützen-Anzeige unter dem Spiel (Karten bleiben nur in der Timeline)
                         let scorersHtml = "";
-                        let relevantEvents = events.filter(ev => ev.type === 'Goal' || ev.type === 'Card');
+                        let goalEvents = events.filter(ev => ev.type === 'Goal');
                         
-                        if (relevantEvents.length > 0) {
+                        if (goalEvents.length > 0) {
                             scorersHtml = `<div class="match-scorers-preview">`;
                             let cH = 0, cA = 0;
                             
-                            relevantEvents.forEach(ge => {
+                            goalEvents.forEach(ge => {
+                                if (ge.team.id === home.id) cH++; else cA++;
                                 let photoHtml = getPlayerPhotoHtml(ge.player.id, '16px');
-                                
-                                if (ge.type === 'Goal') {
-                                    if (ge.team.id === home.id) cH++; else cA++;
-                                    scorersHtml += `<div class="scorer-tag"><span class="scorer-score-badge">${cH}:${cA}</span><span style="display:inline-flex; align-items:center;">${photoHtml}⚽ ${ge.time.elapsed}' ${ge.player.name}</span></div>`;
-                                } else if (ge.type === 'Card') {
-                                    let detail = (ge.detail || '').toLowerCase();
-                                    let comments = (ge.comments || '').toLowerCase();
-                                    let cIcon = '🟨';
-                                    
-                                    if (detail.includes('second yellow') || detail.includes('yellow/red') || detail.includes('yellowred') || (detail.includes('red') && detail.includes('yellow')) || comments.includes('yellow/red') || comments.includes('second yellow')) {
-                                        cIcon = '🟨🟥';
-                                    } else if (detail.includes('red') || comments.includes('red card')) {
-                                        cIcon = '🟥';
-                                    }
-                                    
-                                    scorersHtml += `<div class="scorer-tag" style="color:var(--text-muted);"><span style="display:inline-flex; align-items:center;">${photoHtml}${cIcon} ${ge.time.elapsed}' ${ge.player.name} (${ge.team.name.includes(home.name) ? home.name : away.name})</span></div>`;
-                                }
+                                scorersHtml += `<div class="scorer-tag"><span class="scorer-score-badge">${cH}:${cA}</span><span style="display:inline-flex; align-items:center;">${photoHtml}⚽ ${ge.time.elapsed}' ${ge.player.name}</span></div>`;
                             });
                             scorersHtml += `</div>`;
                         }
@@ -991,7 +1047,7 @@
                         const itemDiv = document.createElement("div");
                         itemDiv.className = "match-card-item" + (isMsvMatch ? " msv-highlight" : "");
                         itemDiv.onclick = () => openMatchDetails(m.fixture.id);
-                        itemDiv.innerHTML = `<div class="match-main-row"><div class="team home"><span>${home.name}</span><img src="${home.logo}"></div><div class="score-box"><div class="score">${displayHome} : ${displayAway}</div><span class="match-info-sub">${dateDisplay}</span></div><div class="team"><img src="${away.logo}"><span>${away.name}</span></div></div>${scorersHtml}`;
+                        itemDiv.innerHTML = `<div class="match-main-row"><div class="team home"><span>${home.name}</span><img src="${home.logo}"></div><div class="score-box"><div class="score">${displayHome} : ${displayAway}</div><span class="match-info-sub">${dateDisplay}</span></div><div class="team"><img src="${away.logo}"><span>${away.name}</span></div></div>${matchTimelineHtml}${scorersHtml}`;
                         container.appendChild(itemDiv);
                     });
                     document.getElementById('tickerTrack').innerHTML = tickerHtml + tickerHtml;
