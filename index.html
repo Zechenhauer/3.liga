@@ -26,7 +26,7 @@
             --live-red: #ff3333;
             --msv-blue: #004b93; /* MSV Duisburg Blau */
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+- { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); padding: 15px; display: flex; justify-content: center; }
         .container { width: 100%; max-width: 950px; }
 
@@ -216,6 +216,7 @@
                 <span id="pollingIcon">🟢</span> Live-Polling: <span id="pollingStateText">An</span>
             </button>
             <button onclick="subscribePush()" style="background: var(--accent-color); color: #000; font-weight: bold;">🔔 Supabase Tor-Alarm</button>
+            <button onclick="sendFinishedMatchdayPush()" style="background: #1f6feb; color: #fff; font-weight: bold;">🏁 Endergebnisse</button>
         </div>
 
         <!-- Hauptbereich -->
@@ -437,6 +438,79 @@
                 else alert("Fehler von der Edge Function.");
             } catch (e) {
                 alert("Netzwerkfehler: " + e.message);
+            }
+        }
+
+        async function sendFinishedMatchdayPush() {
+            if (!currentMatchday) {
+                alert("Kein Spieltag ausgewählt.");
+                return;
+            }
+
+            try {
+                const res = await fetch(
+                    `https://v3.football.api-sports.io/fixtures?league=${leagueId}&season=${season}&round=${encodeURIComponent(currentMatchday)}`,
+                    { headers: { "x-apisports-key": apiKey } }
+                );
+                const data = await res.json();
+                const finishedMatches = (data.response || []).filter(m =>
+                    ["FT", "AET", "PEN"].includes(m.fixture?.status?.short)
+                );
+
+                if (finishedMatches.length === 0) {
+                    alert("Für diesen Spieltag liegen noch keine beendeten Spiele vor.");
+                    return;
+                }
+
+                let sentCount = 0;
+
+                for (const m of finishedMatches) {
+                    const matchId = m.fixture.id;
+                    const homeName = m.teams.home.name;
+                    const awayName = m.teams.away.name;
+                    const hGoals = m.goals.home ?? 0;
+                    const aGoals = m.goals.away ?? 0;
+                    const eventKey = `ft_msv_${matchId}_${hGoals}:${aGoals}`;
+
+                    const { data: existing, error: checkError } = await supabaseClient
+                        .from('push_sent_events_msv')
+                        .select('event_key')
+                        .eq('event_key', eventKey)
+                        .maybeSingle();
+
+                    if (existing || checkError) {
+                        continue;
+                    }
+
+                    const { error: insertError } = await supabaseClient
+                        .from('push_sent_events_msv')
+                        .insert([{ event_key: eventKey }]);
+
+                    if (!insertError) {
+                        await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+                            method: 'POST',
+                            mode: 'cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                table: 'push_subscriptions_msv',
+                                eventKey: eventKey,
+                                title: `🏁 Endergebnis (3. Liga) ${hGoals}:${aGoals}`,
+                                body: `${homeName} : ${awayName}`,
+                                icon: 'https://media.api-sports.io/football/leagues/80.png'
+                            })
+                        });
+                        sentCount++;
+                    }
+                }
+
+                if (sentCount > 0) {
+                    alert(`${sentCount} Endergebnis-Push(es) für die 3. Liga versendet!`);
+                } else {
+                    alert("Alle beendeten Spiele dieses Spieltags wurden bereits als Endergebnis gesendet.");
+                }
+            } catch (e) {
+                console.error("Fehler beim Senden der Endergebnisse (3. Liga):", e);
+                alert("Fehler beim Senden der Endergebnisse: " + e.message);
             }
         }
 
