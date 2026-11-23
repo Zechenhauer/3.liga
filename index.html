@@ -216,7 +216,6 @@
                 <span id="pollingIcon">🟢</span> Live-Polling: <span id="pollingStateText">An</span>
             </button>
             <button onclick="subscribePush()" style="background: var(--accent-color); color: #000; font-weight: bold;">🔔 Supabase Tor-Alarm</button>
-            <button onclick="sendFinishedMatchdayPush()" style="background: #1f6feb; color: #fff; font-weight: bold;">🏁 Endergebnisse</button>
         </div>
 
         <!-- Hauptbereich -->
@@ -235,10 +234,13 @@
         <!-- ADMIN BEREICH -->
         <div class="admin-card" id="adminCard">
             <div style="font-weight: bold; color: var(--accent-color); margin-bottom: 12px; text-transform: uppercase; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
-                <span>🔧 Supabase Push-Benachrichtigung testen (MSV)</span>
+                <span>🔧 Supabase Push-Steuerung & Test (MSV)</span>
                 <span style="font-size: 0.7rem; color: #3fb950;">● Admin-Modus Aktiv</span>
             </div>
-            <button style="background: #238636; width: 100%; font-weight: bold;" onclick="sendTestPush()">🚀 Test-Push Benachrichtigung senden</button>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button style="background: #238636; width: 100%; font-weight: bold;" onclick="sendTestPush()">🚀 Test-Push Benachrichtigung senden</button>
+                <button style="background: #1f6feb; color: #fff; width: 100%; font-weight: bold;" onclick="sendFinishedMatchdayPush()">🏁 Endergebnisse für aktuellen Spieltag senden</button>
+            </div>
         </div>
 
         <div class="admin-toggle-wrapper">
