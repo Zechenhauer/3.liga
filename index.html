@@ -26,7 +26,7 @@
             --live-red: #ff3333;
             --msv-blue: #004b93; /* MSV Duisburg Blau */
         }
-- { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
         body { background-color: var(--bg-color); color: var(--text-main); padding: 15px; display: flex; justify-content: center; }
         .container { width: 100%; max-width: 950px; }
 
@@ -216,6 +216,7 @@
                 <span id="pollingIcon">🟢</span> Live-Polling: <span id="pollingStateText">An</span>
             </button>
             <button onclick="subscribePush()" style="background: var(--accent-color); color: #000; font-weight: bold;">🔔 Supabase Tor-Alarm</button>
+            <button onclick="subscribeFinalsPush()" style="background: #21262d; color: var(--accent-color); border-color: var(--accent-color); font-weight: bold;">🏁 Endergebnisse</button>
         </div>
 
         <!-- Hauptbereich -->
@@ -291,6 +292,8 @@
     <script>
         const SUPABASE_URL = 'https://lhusylpjnujlqomougmg.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_yXEueWILvAq-Vm2VfTuYyg_BIQeE1KK';
+        const FINALS_DEDUP_TABLE = 'push_sent_events_msv';
+        const FINALS_PREFIX = 'ft_msv';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         const apiKey = "297322363f3bf16e1304cfb933a0c8d5";
@@ -307,6 +310,8 @@
         let smartPollingInterval = null;
         let isLivePollingEnabled = true;
         let recentGoalsList = JSON.parse(localStorage.getItem('msv_recent_goals_cache') || '[]');
+        let sentFinalsCache = JSON.parse(localStorage.getItem('msv_sent_finals') || '{}');
+        const processingFinals = new Set();
 
         // Caches & Optimierungen
         let fixtureDetailsCache = JSON.parse(localStorage.getItem('liga3_fixture_details_cache') || '{}');
@@ -472,10 +477,10 @@
                     const awayName = m.teams.away.name;
                     const hGoals = m.goals.home ?? 0;
                     const aGoals = m.goals.away ?? 0;
-                    const eventKey = `ft_msv_${matchId}_${hGoals}:${aGoals}`;
+                    const eventKey = `${FINALS_PREFIX}_${matchId}_${hGoals}:${aGoals}`;
 
                     const { data: existing, error: checkError } = await supabaseClient
-                        .from('push_sent_events_msv')
+                        .from(FINALS_DEDUP_TABLE)
                         .select('event_key')
                         .eq('event_key', eventKey)
                         .maybeSingle();
@@ -485,7 +490,7 @@
                     }
 
                     const { error: insertError } = await supabaseClient
-                        .from('push_sent_events_msv')
+                        .from(FINALS_DEDUP_TABLE)
                         .insert([{ event_key: eventKey }]);
 
                     if (!insertError) {
@@ -501,9 +506,12 @@
                                 icon: 'https://media.api-sports.io/football/leagues/80.png'
                             })
                         });
+                        sentFinalsCache[eventKey] = true;
                         sentCount++;
                     }
                 }
+
+                try { localStorage.setItem('msv_sent_finals', JSON.stringify(sentFinalsCache)); } catch(e){}
 
                 if (sentCount > 0) {
                     alert(`${sentCount} Endergebnis-Push(es) für die 3. Liga versendet!`);
@@ -527,7 +535,7 @@
             return outputArray;
         }
 
-        async function subscribePush() {
+        async function registerLiga3PushSubscription(successMessage) {
             if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
                 alert("Push-Benachrichtigungen werden von diesem Browser leider nicht unterstützt.");
                 return;
@@ -556,10 +564,68 @@
                     auth: auth
                 }, { onConflict: 'endpoint' });
 
-                alert("Supabase Push-Alarm (MSV) erfolgreich aktiviert!");
+                alert(successMessage);
             } catch (error) {
                 console.error('Fehler bei der Push-Registrierung:', error);
                 alert("Fehler beim Aktivieren der Benachrichtigung: " + error.message);
+            }
+        }
+
+        async function subscribePush() {
+            await registerLiga3PushSubscription("Supabase Push-Alarm (MSV) erfolgreich aktiviert!");
+        }
+
+        async function subscribeFinalsPush() {
+            await registerLiga3PushSubscription("Supabase Endergebnis-Alarm (3. Liga) erfolgreich aktiviert!");
+        }
+
+        async function checkFinishedMatchAndNotify(fixtureId, statusShort, homeName, awayName, hScore, aScore) {
+            if (!['FT', 'AET', 'PEN'].includes(statusShort)) return;
+            if (hScore === null || hScore === undefined || aScore === null || aScore === undefined) return;
+
+            const eventKey = `${FINALS_PREFIX}_${fixtureId}_${hScore}:${aScore}`;
+            if (sentFinalsCache[eventKey] || processingFinals.has(eventKey)) return;
+
+            processingFinals.add(eventKey);
+            try {
+                if (supabaseClient) {
+                    const { data: existingRows, error: selectError } = await supabaseClient
+                        .from(FINALS_DEDUP_TABLE)
+                        .select('event_key')
+                        .eq('event_key', eventKey)
+                        .limit(1);
+
+                    if (!selectError && Array.isArray(existingRows) && existingRows.length > 0) {
+                        sentFinalsCache[eventKey] = true;
+                        try { localStorage.setItem('msv_sent_finals', JSON.stringify(sentFinalsCache)); } catch(e){}
+                        return;
+                    }
+
+                    const { error: insertError } = await supabaseClient
+                        .from(FINALS_DEDUP_TABLE)
+                        .insert([{ event_key: eventKey }]);
+
+                    if (insertError) return;
+
+                    await fetch(`${SUPABASE_URL}/functions/v1/send-push`, {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            table: 'push_subscriptions_msv',
+                            eventKey: eventKey,
+                            title: `🏁 Endergebnis (3. Liga) ${hScore}:${aScore}`,
+                            body: `${homeName} : ${awayName}`
+                        })
+                    });
+                }
+
+                sentFinalsCache[eventKey] = true;
+                try { localStorage.setItem('msv_sent_finals', JSON.stringify(sentFinalsCache)); } catch(e){}
+            } catch (e) {
+                console.error("Fehler beim 3. Liga Endergebnis-Push:", e);
+            } finally {
+                processingFinals.delete(eventKey);
             }
         }
 
@@ -1039,6 +1105,15 @@
                             }
                         }
                         previousScores[fixtureId] = { home: goalsHome, away: goalsAway };
+
+                        checkFinishedMatchAndNotify(
+                            fixtureId,
+                            m.fixture.status.short,
+                            home.name,
+                            away.name,
+                            m.goals.home,
+                            m.goals.away
+                        );
 
                         let displayHome = m.goals.home !== null ? m.goals.home : "-";
                         let displayAway = m.goals.away !== null ? m.goals.away : "-";
